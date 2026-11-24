@@ -3,6 +3,7 @@ import "server-only";
 import { getSessionCookie } from "better-auth/cookies";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { cache } from "react";
 
 import { apiConfigurada } from "@/lib/api";
@@ -18,6 +19,7 @@ export const obterSessao = cache(async () => {
 });
 
 export async function exigirUsuario(volta: string): Promise<Usuario> {
+  await connection();
   if (!apiConfigurada) redirect("/demonstracao");
   const { sessao, tinhaCookie } = await obterSessao();
   if (!sessao) redirect(paginaDeEntrada(volta, tinhaCookie ? { expirou: "1" } : {}));
