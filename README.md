@@ -1,6 +1,6 @@
 # Capi, assistente financeiro
 
-Repositório `nota-a-nota`. Copiloto financeiro pessoal que lê seus extratos e cupons fiscais **item a item**, organiza
+Copiloto financeiro pessoal que lê seus extratos e cupons fiscais **item a item**, organiza
 tudo num ledger de partidas dobradas e responde perguntas sobre o seu dinheiro: no
 dashboard ou direto do Claude Desktop, via MCP.
 

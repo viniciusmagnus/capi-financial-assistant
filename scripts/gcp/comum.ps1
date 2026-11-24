@@ -35,9 +35,12 @@ function Invoke-GcloudComRepeticao {
 
 function Get-Gcloud {
   $ErrorActionPreference = "Continue"
-  $saida = & gcloud @args 2>$null
-  if ($LASTEXITCODE -ne 0) { throw "Falhou: gcloud $($args -join ' ')" }
-  ($saida | Out-String).Trim()
+  for ($tentativa = 1; $tentativa -le 4; $tentativa++) {
+    $saida = & gcloud @args 2>$null
+    if ($LASTEXITCODE -eq 0) { return ($saida | Out-String).Trim() }
+    Start-Sleep -Seconds 5
+  }
+  throw "Falhou: gcloud $($args -join ' ')"
 }
 
 function Test-Gcloud {
