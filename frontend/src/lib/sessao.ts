@@ -18,6 +18,13 @@ export const obterSessao = cache(async () => {
   return { sessao, tinhaCookie: Boolean(getSessionCookie(cabecalhos, { cookiePrefix: "capi" })) };
 });
 
+export async function sessoesAtivas(usuarioId: string) {
+  const contexto = await auth.$context;
+  const sessoes = await contexto.internalAdapter.listSessions(usuarioId, { onlyActiveSessions: true });
+  const agora = new Date();
+  return sessoes.filter((s) => new Date(s.expiresAt) > agora);
+}
+
 export async function exigirUsuario(volta: string): Promise<Usuario> {
   await connection();
   if (!apiConfigurada) redirect("/demonstracao");

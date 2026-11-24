@@ -23,6 +23,7 @@ import {
   revogarTokenMcp,
 } from "@/lib/api";
 import { auth } from "@/lib/auth";
+import { sessoesAtivas } from "@/lib/sessao";
 import type { Categoria, Sentido } from "@/lib/cofrinho";
 import type { Decisao, Resultado } from "@/lib/revisao";
 
@@ -210,8 +211,9 @@ export async function apagarTokenDoMcp(id: number) {
 export async function encerrarSessao(id: string) {
   if (typeof id !== "string" || id.length === 0 || id.length > 200) throw new Error("sessão inválida");
   const cabecalhos = await headers();
-  const sessoes = await auth.api.listSessions({ headers: cabecalhos });
-  const alvo = sessoes.find((s) => s.id === id);
+  const atual = await auth.api.getSession({ headers: cabecalhos });
+  if (!atual) return { ok: false as const };
+  const alvo = (await sessoesAtivas(atual.user.id)).find((s) => s.id === id);
   if (!alvo) return { ok: false as const };
   await auth.api.revokeSession({ headers: cabecalhos, body: { token: alvo.token } });
   refresh();

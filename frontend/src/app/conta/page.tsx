@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { PainelConta, type SessaoListada } from "@/components/conta/PainelConta";
 import { buscarTokensMcp } from "@/lib/api";
 import { auth, googleConfigurado } from "@/lib/auth";
-import { exigirUsuario, obterSessao } from "@/lib/sessao";
+import { exigirUsuario, obterSessao, sessoesAtivas } from "@/lib/sessao";
 
 export const metadata: Metadata = { title: "Conta · Capi" };
 
@@ -40,7 +40,7 @@ async function ContaCarregada() {
   const [{ sessao }, contas, sessoes, tokens] = await Promise.all([
     obterSessao(),
     auth.api.listUserAccounts({ headers: cabecalhos }),
-    auth.api.listSessions({ headers: cabecalhos }),
+    sessoesAtivas(usuario.id),
     buscarTokensMcp(),
   ]);
   const listadas: SessaoListada[] = sessoes
