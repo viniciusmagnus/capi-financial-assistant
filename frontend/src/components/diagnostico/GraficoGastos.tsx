@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { CorrecaoDeCategoria } from "@/components/CorrecaoDeCategoria";
 import { IconeGasto } from "@/components/IconeGasto";
+import { RevisarOutros } from "@/components/RevisarOutros";
 import type { Categorias } from "@/lib/cofrinho";
 import { type Agrupamento, type Diagnostico, type Linha, formatarDiaMes } from "@/lib/diagnostico";
 import { formatarPorcento, formatarReais } from "@/lib/formato";
@@ -96,10 +97,13 @@ export function GraficoGastos({ diagnostico, categorias, modoDemo }: { diagnosti
           ))}
         </div>
       </div>
-      <p className="mt-2 text-sm text-suave">
-        Do maior para o menor. Toque numa linha para ver as transações e corrigir a categoria.
-        {diagnostico.renda_referencia_centavos ? " % da renda do mês." : ""}
-      </p>
+      <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+        <p className="min-w-0 flex-1 text-sm text-suave">
+          Do maior para o menor. Toque numa linha para ver as transações e corrigir a categoria.
+          {diagnostico.renda_referencia_centavos ? " % da renda do mês." : ""}
+        </p>
+        {!modoDemo && <RevisarOutros categorias={categorias} />}
+      </div>
 
       {linhas.length === 0 ? (
         <p className="mt-6 text-sm text-suave">Nenhum gasto registrado neste mês.</p>

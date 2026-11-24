@@ -20,8 +20,10 @@ class Settings(BaseSettings):
     esforco_chat: str = "low"
     db_pool_size: int = 2
     db_max_overflow: int = 3
+    analise_pensar: bool = True
+    analise_esforco: str = "medium"
     pesquisa_web: str = ""
-    pesquisa_web_max_por_mensagem: int = 3
+    pesquisa_web_max_por_analise: int = 6
 
     @field_validator("database_url")
     @classmethod

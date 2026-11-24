@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleUserRound, ListChecks, MessageCircle, ScanSearch, Search, Sunset } from "lucide-react";
+import { CircleUserRound, ListChecks, MessageCircle, Search, Sunset } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -9,7 +9,6 @@ const DESTINOS = [
   { href: "/", rotulo: "Mês", icone: Sunset },
   { href: "/chat", rotulo: "Chat", icone: MessageCircle },
   { href: "/busca", rotulo: "Busca", icone: Search },
-  { href: "/revisao", rotulo: "Revisar", icone: ScanSearch },
   { href: "/regras", rotulo: "Regras", icone: ListChecks },
   { href: "/conta", rotulo: "Conta", icone: CircleUserRound },
 ];
@@ -73,7 +72,7 @@ export function Topo() {
         aria-label="Principal"
         className="fixed inset-x-0 bottom-0 z-30 border-t border-borda bg-fundo/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden"
       >
-        <ul className="grid grid-cols-6">
+        <ul className="grid grid-cols-5">
           {DESTINOS.map(({ href, rotulo, icone: Icone }) => (
             <li key={href}>
               <Link

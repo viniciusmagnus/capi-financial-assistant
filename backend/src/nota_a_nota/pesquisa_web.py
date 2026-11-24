@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from nota_a_nota import estabelecimentos, regras
 from nota_a_nota.config import get_settings
+from nota_a_nota.llm.modelos import raciocinio
 
 MAXIMO_TERMOS = 5
 TAMANHO_MAXIMO_TERMO = 60
@@ -118,10 +119,10 @@ class PesquisaAnthropic:
         }
         resposta = self.client.messages.create(
             model=self.modelo,
-            max_tokens=700,
+            max_tokens=2000,
             system=SISTEMA,
             tools=[ferramenta],
-            thinking={"type": "disabled"},
+            **raciocinio(self.modelo, pensar=False),
             messages=[
                 {
                     "role": "user",

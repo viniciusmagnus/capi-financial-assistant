@@ -43,12 +43,15 @@ dados fictícios e sem cadastro. Cada push na `main` passa pelos testes e é pub
   abreviadas, nomes de produto, documentos.
 - **Servidor MCP no mesmo backend.** As ferramentas que o app usa são as mesmas que o Claude
   Desktop e o Claude Code enxergam.
-- **Revisão assistida de "Outros".** Em `/revisao` você filtra, agrupa descrições parecidas e
-  conversa com o Claude sobre uma seleção: "Lords ZS é a loja de ternos", "tenta descobrir esses
-  estabelecimentos". Ele separa estabelecimento, categoria e forma de pagamento. Também
-  distingue o que você disse do que é hipótese e do que veio de uma pesquisa na web, mostrando as
-  fontes. O resultado sai como proposta. Você aprova, edita ou rejeita a partir de uma prévia, e a
-  correção pode virar regra para as próximas importações, com histórico e desfazer.
+- **Revisar Outros em um clique.** Em "Para onde foi o dinheiro", o botão "Revisar Outros" manda
+  os gastos dessa categoria para o Claude.
+  - **O que ele faz:** identifica o estabelecimento e sugere uma das suas categorias. Quando o
+    nome não basta, pesquisa na web, e mostra as fontes junto com uma justificativa curta.
+  - **O que fica em Outros:** o que não dá para identificar com segurança, como "PIX enviado"
+    sem nome ou uma compra na Amazon sem o produto.
+  - **A modal:** você aprova, troca a categoria (inclusive por uma nova) ou rejeita cada gasto, e
+    só o aprovado muda. As escolhas podem virar regra para as próximas importações, e o aviso
+    final tem "Desfazer".
 - **Cada pessoa vê só o que é dela.** Cadastro com e-mail verificado ou Google, sessões
   revogáveis e dados financeiros com dono imposto no ORM e no banco. Decisões e limites em
   [docs/seguranca.md](docs/seguranca.md).
@@ -90,17 +93,22 @@ Detalhes em [docs/arquitetura.md](docs/arquitetura.md).
 - **Persona com rédea curta.** A piada da Capi é gerada pelo Haiku, mas o código sorteia o assunto,
   a expressão gaúcha e o tipo de piada, e uma expressão regular descarta fala fora do tom. Quando a
   fala é barrada, ou não há chave da API, entra um roteiro fixo.
-- **Agente que propõe, humano que aplica.** Na revisão de "Outros", o Claude tem três ferramentas:
-  buscar no histórico, pesquisar na web e registrar propostas. Nenhuma delas escreve no ledger.
-  Cada proposta é validada no servidor (ids da seleção, categoria existente, fonte real, regra
-  específica) antes de aparecer na tela. A aprovação aplica uma prévia assinada com SHA-256 e uma
-  chave de idempotência, então editar a proposta exige aprovar de novo e um clique repetido não
-  aplica duas vezes.
+- **Agente que sugere, humano que aplica.** Na revisão de "Outros", o Claude recebe os gastos
+  agrupados por descrição parecida, o que economiza tokens. Tem três ferramentas: buscar no
+  histórico, pesquisar na web e registrar sugestões. Nenhuma delas escreve no ledger.
+- **Guardas que não dependem do modelo.** O servidor valida cada sugestão:
+  - a categoria precisa existir e não pode ser "Outros" nem "Transferência interna";
+  - fonte citada precisa ter vindo de uma pesquisa real;
+  - marketplace nunca ganha categoria automática, nem pelo histórico;
+  - descrição sem nome de quem recebeu ("PIX enviado") fica em Outros.
+
+  A confirmação aplica só o aprovado, só em quem ainda está em "Outros", numa transação, com chave
+  de idempotência e registro de cada alteração.
 - **Pesquisa na web com dados mínimos.** A busca roda numa chamada separada ao Claude com a
-  ferramenta de web search, que recebe só o nome do estabelecimento como está na descrição. O
-  backend tira números, valores e palavras de pagamento, só aceita cidade que você escreveu e
-  recusa Pix e transferências. Os links mostrados vêm dos blocos de resultado da ferramenta, nunca
-  do texto do modelo.
+  ferramenta de web search. Ela recebe só o nome do estabelecimento como está na descrição e, se a
+  descrição trouxer, o bairro. O backend tira números, valores e palavras de pagamento e recusa Pix
+  e transferências. Os links mostrados vêm dos blocos de resultado da ferramenta, nunca do texto
+  do modelo.
 
 ### Busca
 
@@ -250,11 +258,11 @@ usa a ferramenta de web search da API da Anthropic com a mesma `ANTHROPIC_API_KE
 - **Liberação:** a busca precisa estar liberada para a organização no Console da Anthropic
   (Settings → Privacy).
 - **Custo:** cada busca é cobrada à parte, além dos tokens.
-- **Limites:** cada pesquisa faz no máximo 2 buscas, e cada mensagem permite no máximo
-  `PESQUISA_WEB_MAX_POR_MENSAGEM` pesquisas (3 por padrão).
+- **Limites:** cada pesquisa faz no máximo 2 buscas, e cada revisão permite no máximo
+  `PESQUISA_WEB_MAX_POR_ANALISE` pesquisas (6 por padrão).
 
-Sem a variável, o assistente avisa que a pesquisa não está configurada e a classificação segue
-manual ou com o que você contar.
+Sem a variável, o Claude decide só pela descrição e pelo seu histórico, e a modal avisa que a
+pesquisa na web não está configurada.
 
 **Google OAuth.** No Google Cloud Console, crie uma credencial "OAuth client ID" do tipo
 "Web application" e configure:
@@ -292,7 +300,7 @@ Cada token enxerga só os dados de quem o criou e pode ser revogado na mesma tel
 - [x] Validação da chave de acesso da NFC-e
 - [x] Categorização em lote com Claude Haiku 5.5 e saída estruturada
 - [x] Regras de categoria da pessoa aplicadas antes do Claude (tela, API e ferramenta MCP)
-- [x] Revisão assistida de "Outros": conversa com o Claude, pesquisa na web, propostas aprovadas com prévia, regras e desfazer
+- [x] Revisar Outros em um clique: Claude + pesquisa na web, aprovação item a item, regras e desfazer
 - [ ] Sugerir regra a partir das correções feitas à mão fora da revisão
 - [x] Servidor MCP com token pessoal por usuário, guardado como hash e revogável
 - [x] Cofrinho: teto do mês, gasto anotado em dois toques e a Capi comentando com Claude

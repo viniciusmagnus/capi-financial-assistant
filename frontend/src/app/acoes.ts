@@ -6,36 +6,27 @@ import { unstable_rethrow } from "next/navigation";
 
 import {
   ErroDaApi,
-  buscarGruposDaRevisao,
-  buscarIdsDaRevisao,
-  buscarItensDaRevisao,
-  buscarLotesDaRevisao,
-  buscarRevisao,
-  criarConversaDeRevisao,
   criarTokenMcp,
-  enviarAplicacaoDaRevisao,
   enviarCategoria,
+  enviarConfirmacaoDeOutros,
   enviarCorrecao,
   enviarDesfazerLote,
   enviarEdicaoDeRegra,
   enviarGasto,
-  enviarMensagemDeRevisao,
   enviarRegra,
-  enviarRejeicaoDeProposta,
   enviarRenda,
   enviarTeto,
+  pedirAnaliseDeOutros,
   pedirCategorizacao,
-  pedirPreviaDaRevisao,
   removerRegra,
   removerTeto,
   revogarTokenMcp,
 } from "@/lib/api";
 import { auth } from "@/lib/auth";
 import type { Categoria, Sentido } from "@/lib/cofrinho";
-import type { ConteudoProposta, FiltroRevisao, OpcoesAplicacao, Resultado } from "@/lib/revisao";
+import type { Decisao, Resultado } from "@/lib/revisao";
 
-const LIMITE_SELECAO = 2000;
-const LIMITE_CONVERSA = 300;
+const LIMITE_DECISOES = 500;
 
 function falha(erro: string, status?: number) {
   return { ok: false as const, erro, status };
@@ -55,114 +46,34 @@ function idValido(id: unknown): id is number {
   return Number.isInteger(id) && (id as number) > 0;
 }
 
-function idsValidos(ids: unknown, maximo: number): ids is number[] {
-  return Array.isArray(ids) && ids.length > 0 && ids.length <= maximo && ids.every(idValido);
-}
-
 function textoOuNulo(valor: unknown, maximo: number): string | null {
   if (typeof valor !== "string") return null;
   const limpo = valor.replace(/\s+/g, " ").trim();
   return limpo ? limpo.slice(0, maximo) : null;
 }
 
-function filtroLimpo(filtro: FiltroRevisao): FiltroRevisao {
-  const data = (v: unknown) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
-  return {
-    q: textoOuNulo(filtro?.q, 100) ?? undefined,
-    inicio: data(filtro?.inicio),
-    fim: data(filtro?.fim),
-    conta_id: idValido(filtro?.conta_id) ? filtro.conta_id : undefined,
-  };
+export async function analisarOutros() {
+  return tentar(() => pedirAnaliseDeOutros());
 }
 
-function conteudoLimpo(conteudo: ConteudoProposta): ConteudoProposta | null {
-  if (!conteudo || !idsValidos(conteudo.transacao_ids, LIMITE_SELECAO)) return null;
-  const regra = conteudo.regra && typeof conteudo.regra.padrao === "string" && conteudo.regra.padrao.trim().length >= 3
-    ? {
-        padrao: conteudo.regra.padrao.trim().slice(0, 120),
-        categoria: textoOuNulo(conteudo.regra.categoria, 80),
-        estabelecimento: textoOuNulo(conteudo.regra.estabelecimento, 80),
-      }
-    : null;
-  return {
-    transacao_ids: [...new Set(conteudo.transacao_ids)],
-    estabelecimento: textoOuNulo(conteudo.estabelecimento, 80),
-    categoria: textoOuNulo(conteudo.categoria, 80),
-    motivo: typeof conteudo.motivo === "string" ? conteudo.motivo.slice(0, 600) : "",
-    evidencias: Array.isArray(conteudo.evidencias) ? conteudo.evidencias.slice(0, 8) : [],
-    incertezas: Array.isArray(conteudo.incertezas) ? conteudo.incertezas.filter((i) => typeof i === "string").slice(0, 6) : [],
-    regra,
-  };
-}
+const ORIGENS = new Set(["usuario", "historico", "pesquisa"]);
 
-function opcoesLimpas(opcoes: OpcoesAplicacao): OpcoesAplicacao {
-  return {
-    alcance: opcoes?.alcance === "correspondencias" ? "correspondencias" : "selecionadas",
-    salvar_regra: opcoes?.salvar_regra === true,
-    substituir_manuais: opcoes?.substituir_manuais === true,
-    confirmar_transferencia: opcoes?.confirmar_transferencia === true,
-  };
-}
-
-export async function listarRevisao(filtro: FiltroRevisao, pagina: number) {
-  return tentar(() => buscarRevisao(filtroLimpo(filtro), idValido(pagina) ? pagina : 1, 50));
-}
-
-export async function agruparRevisao(filtro: FiltroRevisao) {
-  return tentar(() => buscarGruposDaRevisao(filtroLimpo(filtro)));
-}
-
-export async function idsDoFiltroDaRevisao(filtro: FiltroRevisao) {
-  return tentar(() => buscarIdsDaRevisao(filtroLimpo(filtro)));
-}
-
-export async function itensDaRevisao(ids: number[]) {
-  if (!idsValidos(ids, LIMITE_CONVERSA)) return falha("seleção inválida");
-  return tentar(() => buscarItensDaRevisao(ids));
-}
-
-export async function abrirConversaDeRevisao() {
-  return tentar(() => criarConversaDeRevisao());
-}
-
-export async function conversarSobreRevisao(conversaId: number, texto: string, ids: number[]) {
-  if (!idValido(conversaId)) return falha("conversa inválida");
-  const limpo = textoOuNulo(texto, 2000);
-  if (!limpo) return falha("escreva uma mensagem");
-  if (!idsValidos(ids, LIMITE_CONVERSA)) return falha(`selecione de 1 a ${LIMITE_CONVERSA} transações para conversar`);
-  return tentar(() => enviarMensagemDeRevisao(conversaId, limpo, ids));
-}
-
-export async function previaDaRevisao(conteudo: ConteudoProposta, opcoes: OpcoesAplicacao) {
-  const limpo = conteudoLimpo(conteudo);
-  if (!limpo) return falha("proposta inválida");
-  return tentar(() => pedirPreviaDaRevisao(limpo, opcoesLimpas(opcoes)));
-}
-
-export async function aplicarRevisao(
-  conteudo: ConteudoProposta,
-  opcoes: OpcoesAplicacao,
-  assinatura: string,
-  chaveIdempotencia: string,
-  propostaId: number | null,
-) {
-  const limpo = conteudoLimpo(conteudo);
-  if (!limpo) return falha("proposta inválida");
-  if (typeof assinatura !== "string" || !/^[0-9a-f]{64}$/.test(assinatura)) return falha("prévia inválida");
+export async function confirmarOutros(decisoes: Decisao[], lembrar: boolean, chaveIdempotencia: string) {
+  if (!Array.isArray(decisoes) || decisoes.length === 0 || decisoes.length > LIMITE_DECISOES) return falha("nenhuma alteração aprovada");
   if (typeof chaveIdempotencia !== "string" || !/^[A-Za-z0-9_-]{8,64}$/.test(chaveIdempotencia)) return falha("chave inválida");
-  if (propostaId !== null && !idValido(propostaId)) return falha("proposta inválida");
-  const resultado = await tentar(() => enviarAplicacaoDaRevisao(limpo, opcoesLimpas(opcoes), assinatura, chaveIdempotencia, propostaId));
+  const limpas: Decisao[] = [];
+  for (const d of decisoes) {
+    if (!idValido(d?.transacao_id) || !categoriaValida(d?.categoria)) return falha("decisão inválida");
+    limpas.push({
+      transacao_id: d.transacao_id,
+      categoria: d.categoria.trim(),
+      estabelecimento: textoOuNulo(d.estabelecimento, 80),
+      origem: ORIGENS.has(d.origem) ? d.origem : "usuario",
+    });
+  }
+  const resultado = await tentar(() => enviarConfirmacaoDeOutros(limpas, lembrar === true, chaveIdempotencia));
   if (resultado.ok) refresh();
   return resultado;
-}
-
-export async function rejeitarProposta(id: number) {
-  if (!idValido(id)) return falha("proposta inválida");
-  return tentar(() => enviarRejeicaoDeProposta(id));
-}
-
-export async function lotesDaRevisao() {
-  return tentar(() => buscarLotesDaRevisao());
 }
 
 export async function desfazerLote(id: number) {

@@ -1,40 +1,32 @@
-import hashlib
-import json
 import re
 from collections import OrderedDict
 from datetime import UTC, date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import Select, delete, func, or_, select, update
+from sqlalchemy import Select, delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased
 
 from nota_a_nota import categorias as catalogo
 from nota_a_nota import estabelecimentos, regras
-from nota_a_nota.ledger import TRANSFERENCIA_INTERNA, aplicar_categoria, nome_conta_categoria
+from nota_a_nota.ledger import aplicar_categoria, nome_conta_categoria
 from nota_a_nota.models import (
     AlteracaoRevisao,
     Conta,
     Lancamento,
     LoteRevisao,
     OrigemCategoria,
-    PropostaRevisao,
     RegraCategoria,
     TipoConta,
     Transacao,
 )
 
-CATEGORIA_PADRAO = "Outros"
+CATEGORIA_REVISADA = "Outros"
 SEM_ESTABELECIMENTO = "Estabelecimento não identificado"
-POR_PAGINA_MAXIMO = 100
-LIMITE_SELECAO = 2000
-LIMITE_GRUPOS = 5000
-LIMITE_CORRESPONDENCIAS = 20000
+LIMITE_DECISOES = 500
 
-OrigemInformacao = Literal["usuario", "regra", "historico", "pesquisa", "hipotese"]
-OrigemAlteracao = Literal["usuario", "regra", "historico", "pesquisa"]
-Alcance = Literal["selecionadas", "correspondencias"]
+OrigemSugestao = Literal["usuario", "historico", "pesquisa"]
 
 _PIX = re.compile(r"(?<![A-Z])PIX(?![A-Z])")
 _TRANSFERENCIA = re.compile(r"(?<![A-Z])(?:TED|DOC|TEF|TRANSF(?:ERENCIA)?)(?![A-Z])")
@@ -50,143 +42,53 @@ class NaoEncontradas(LookupError):
         self.ids = ids
 
 
-class RevisaoInvalida(ValueError):
-    pass
-
-
-class PreviaDesatualizada(RuntimeError):
-    pass
-
-
-class FiltroRevisao(BaseModel):
-    categoria: str = CATEGORIA_PADRAO
-    q: str | None = Field(None, max_length=100)
-    inicio: date | None = None
-    fim: date | None = None
-    conta_id: int | None = None
-
-
 class ItemRevisao(BaseModel):
     id: int
     data: date
     descricao: str
     valor_centavos: int
-    conta_id: int
     conta: str
     categoria: str
     estabelecimento: str
     estabelecimento_confirmado: bool
-    marca: str | None
     forma_pagamento: str | None
     parcela: str | None
     categorizada_por: OrigemCategoria | None
 
 
-class PaginaRevisao(BaseModel):
-    itens: list[ItemRevisao]
-    total: int
-    total_centavos: int
-    pagina: int
-    por_pagina: int
-
-
 class GrupoRevisao(BaseModel):
     chave: str
     estabelecimento: str
-    marca: str | None
-    confirmado: bool
+    marca: str | None = None
     quantidade: int
     total_centavos: int
     descricoes: list[str]
     ids: list[int]
+    regra_sugerida: str | None = None
 
 
-class ContaDeOrigem(BaseModel):
-    id: int
-    nome: str
-
-
-class Evidencia(BaseModel):
-    origem: OrigemInformacao
-    texto: str = Field(min_length=1, max_length=400)
-    fontes: list[str] = Field(default_factory=list, max_length=5)
-
-
-class RegraSugerida(BaseModel):
-    padrao: str = Field(min_length=3, max_length=120)
-    categoria: str | None = None
+class Decisao(BaseModel):
+    transacao_id: int
+    categoria: str = Field(min_length=1, max_length=80)
     estabelecimento: str | None = Field(None, max_length=80)
+    origem: OrigemSugestao = "usuario"
 
-
-class ConteudoProposta(BaseModel):
-    transacao_ids: list[int] = Field(min_length=1, max_length=LIMITE_SELECAO)
-    estabelecimento: str | None = Field(None, max_length=80)
-    categoria: str | None = None
-    motivo: str = Field("", max_length=600)
-    evidencias: list[Evidencia] = Field(default_factory=list, max_length=8)
-    incertezas: list[str] = Field(default_factory=list, max_length=6)
-    regra: RegraSugerida | None = None
-
-    @field_validator("transacao_ids")
-    @classmethod
-    def sem_repeticao(cls, ids: list[int]) -> list[int]:
-        return sorted(set(ids))
-
-    @field_validator("estabelecimento", "categoria")
+    @field_validator("estabelecimento")
     @classmethod
     def vazio_vira_nulo(cls, valor: str | None) -> str | None:
-        if valor is None:
-            return None
-        return " ".join(valor.split()) or None
+        return " ".join(valor.split()) or None if valor else None
 
 
-class OpcoesAplicacao(BaseModel):
-    alcance: Alcance = "selecionadas"
-    salvar_regra: bool = False
-    substituir_manuais: bool = False
-    confirmar_transferencia: bool = False
+class Ignorada(BaseModel):
+    transacao_id: int
+    motivo: str
 
 
-class RegraNaPrevia(BaseModel):
-    padrao: str
-    categoria: str | None
-    estabelecimento: str | None
-    valida: bool
-    erro: str | None
-    existente: regras.Regra | None
-    casa_com_selecionadas: int
-    correspondencias_existentes: int
-
-
-class LinhaPrevia(BaseModel):
-    id: int
-    data: date
-    descricao: str
-    valor_centavos: int
-    categoria_atual: str
-    categoria_nova: str
-    estabelecimento_atual: str | None
-    estabelecimento_novo: str | None
-    categorizada_por: OrigemCategoria | None
-    por: Literal["selecao", "regra"]
-    motivo: str | None = None
-
-
-class Previa(BaseModel):
-    afetadas: list[LinhaPrevia]
-    ignoradas: list[LinhaPrevia]
-    manuais_preservadas: int
-    efeito_nos_gastos_centavos: int
-    regra: RegraNaPrevia | None
-    avisos: list[str]
-    exige_confirmar_transferencia: bool
-    assinatura: str
-
-
-class ResultadoLote(BaseModel):
-    lote_id: int
+class ResultadoConfirmacao(BaseModel):
+    lote_id: int | None
     alteradas: int
-    regra: regras.Regra | None
+    ignoradas: list[Ignorada]
+    regras_salvas: list[str]
     repetido: bool
 
 
@@ -195,15 +97,6 @@ class ResultadoDesfazer(BaseModel):
     desfeitas: int
     conflitos: list[int]
     ja_desfeito: bool
-
-
-class LoteResumo(BaseModel):
-    id: int
-    resumo: str
-    criado_em: datetime
-    desfeito_em: datetime | None
-    alteracoes: int
-    regra_id: int | None
 
 
 def detalhes_de_pagamento(descricao: str, cartao: bool) -> tuple[str | None, str | None]:
@@ -230,11 +123,34 @@ def detalhes_de_pagamento(descricao: str, cartao: bool) -> tuple[str | None, str
     return forma, parcela
 
 
+def descricao_identifica(descricao: str) -> bool:
+    identificado = estabelecimentos.identificar(descricao)
+    return bool(identificado.marca or regras.termos_distintivos(identificado.nome))
+
+
+def padrao_para_regra(descricao: str) -> str | None:
+    candidato = estabelecimentos.identificar(descricao).regra
+    if not candidato:
+        return None
+    padrao = regras.normalizar(candidato)
+    if len(padrao) < regras.TAMANHO_MINIMO or not regras.termos_distintivos(padrao):
+        return None
+    return padrao if regras.casa(padrao, descricao) else None
+
+
+def problema_no_estabelecimento(nome: str | None) -> str | None:
+    if nome is None:
+        return None
+    if not regras.termos_distintivos(nome):
+        return f"{nome!r} é forma de pagamento, não quem recebeu"
+    return None
+
+
 def _nome_categoria(nome_conta: str) -> str:
     return nome_conta.split(":", 1)[1] if ":" in nome_conta else nome_conta
 
 
-def _base() -> tuple[Select, dict]:
+def _base() -> tuple[Select, object]:
     contra = aliased(Lancamento)
     conta_contra = aliased(Conta)
     origem = aliased(Lancamento)
@@ -248,8 +164,6 @@ def _base() -> tuple[Select, dict]:
             Transacao.categorizada_por,
             contra.valor_centavos,
             conta_contra.nome,
-            conta_contra.tipo,
-            conta_origem.id,
             conta_origem.nome,
             conta_origem.tipo,
         )
@@ -262,43 +176,11 @@ def _base() -> tuple[Select, dict]:
             conta_origem.tipo.in_([TipoConta.ATIVO, TipoConta.PASSIVO]),
         )
     )
-    return consulta, {"conta_contra": conta_contra, "conta_origem": conta_origem, "contra": contra}
-
-
-def _filtrada(filtro: FiltroRevisao) -> tuple[Select, dict]:
-    consulta, a = _base()
-    consulta = consulta.where(a["conta_contra"].nome == nome_conta_categoria(filtro.categoria))
-    if filtro.inicio:
-        consulta = consulta.where(Transacao.data >= filtro.inicio)
-    if filtro.fim:
-        consulta = consulta.where(Transacao.data <= filtro.fim)
-    if filtro.conta_id:
-        consulta = consulta.where(a["conta_origem"].id == filtro.conta_id)
-    if filtro.q and filtro.q.strip():
-        termo = re.sub(r"([%_\\])", r"\\\1", filtro.q.strip())
-        consulta = consulta.where(
-            or_(
-                Transacao.descricao.ilike(f"%{termo}%"),
-                Transacao.estabelecimento.ilike(f"%{termo}%"),
-            )
-        )
-    return consulta, a
+    return consulta, conta_contra
 
 
 def _item(linha) -> ItemRevisao:
-    (
-        transacao_id,
-        data,
-        descricao,
-        confirmado,
-        categorizada_por,
-        valor,
-        nome_contra,
-        _tipo_contra,
-        conta_id,
-        nome_origem,
-        tipo_origem,
-    ) = linha
+    transacao_id, data, descricao, confirmado, por, valor, contra, origem, tipo_origem = linha
     identificado = estabelecimentos.identificar(descricao)
     forma, parcela = detalhes_de_pagamento(descricao, tipo_origem == TipoConta.PASSIVO)
     return ItemRevisao(
@@ -306,319 +188,75 @@ def _item(linha) -> ItemRevisao:
         data=data,
         descricao=descricao,
         valor_centavos=valor,
-        conta_id=conta_id,
-        conta=_nome_categoria(nome_origem),
-        categoria=_nome_categoria(nome_contra),
+        conta=_nome_categoria(origem),
+        categoria=_nome_categoria(contra),
         estabelecimento=confirmado
-        or (
-            identificado.nome
-            if identificado.marca or regras.termos_distintivos(identificado.nome)
-            else SEM_ESTABELECIMENTO
-        ),
+        or (identificado.nome if descricao_identifica(descricao) else SEM_ESTABELECIMENTO),
         estabelecimento_confirmado=confirmado is not None,
-        marca=identificado.marca,
         forma_pagamento=forma,
         parcela=parcela,
-        categorizada_por=categorizada_por,
+        categorizada_por=por,
     )
 
 
-def listar(
-    session: Session, filtro: FiltroRevisao, pagina: int = 1, por_pagina: int = 50
-) -> PaginaRevisao:
-    por_pagina = max(1, min(por_pagina, POR_PAGINA_MAXIMO))
-    pagina = max(1, pagina)
-    consulta, _ = _filtrada(filtro)
-    subconsulta = consulta.subquery()
-    total, soma = session.execute(
-        select(func.count(), func.coalesce(func.sum(subconsulta.c.valor_centavos), 0))
-    ).one()
+def _em_outros() -> Select:
+    consulta, conta_contra = _base()
+    return consulta.where(conta_contra.nome == nome_conta_categoria(CATEGORIA_REVISADA))
+
+
+def em_outros(session: Session, limite: int) -> list[ItemRevisao]:
     linhas = session.execute(
-        consulta.order_by(Transacao.data.desc(), Transacao.id.desc())
-        .limit(por_pagina)
-        .offset((pagina - 1) * por_pagina)
+        _em_outros().order_by(Transacao.data.desc(), Transacao.id.desc()).limit(limite)
     )
-    return PaginaRevisao(
-        itens=[_item(linha) for linha in linhas],
-        total=total,
-        total_centavos=soma,
-        pagina=pagina,
-        por_pagina=por_pagina,
-    )
+    return [_item(linha) for linha in linhas]
 
 
-def ids_do_filtro(session: Session, filtro: FiltroRevisao) -> list[int]:
-    consulta, _ = _filtrada(filtro)
-    ids = list(
-        session.scalars(
-            consulta.with_only_columns(Transacao.id)
-            .order_by(Transacao.id)
-            .limit(LIMITE_SELECAO + 1)
-        )
-    )
-    if len(ids) > LIMITE_SELECAO:
-        raise RevisaoInvalida(
-            f"o filtro tem mais de {LIMITE_SELECAO} transações; restrinja por período ou conta"
-        )
-    return ids
+def quantos_em_outros(session: Session) -> int:
+    return session.scalar(select(func.count()).select_from(_em_outros().subquery()))
 
 
-def agrupar(session: Session, filtro: FiltroRevisao) -> list[GrupoRevisao]:
-    consulta, _ = _filtrada(filtro)
+def agrupar(itens: list[ItemRevisao]) -> list[GrupoRevisao]:
     grupos: OrderedDict[str, GrupoRevisao] = OrderedDict()
-    linhas = session.execute(consulta.order_by(Transacao.data.desc()).limit(LIMITE_GRUPOS))
-    for linha in linhas:
-        item = _item(linha)
-        identificado = estabelecimentos.identificar(item.descricao)
+    for item in itens:
         chave = (
             f"confirmado:{estabelecimentos.normalizar(item.estabelecimento)}"
             if item.estabelecimento_confirmado
-            else identificado.chave
+            else estabelecimentos.identificar(item.descricao).chave
         )
         grupo = grupos.get(chave)
         if grupo is None:
             grupo = grupos[chave] = GrupoRevisao(
                 chave=chave,
                 estabelecimento=item.estabelecimento,
-                marca=item.marca,
-                confirmado=item.estabelecimento_confirmado,
+                marca=estabelecimentos.identificar(item.descricao).marca,
                 quantidade=0,
                 total_centavos=0,
                 descricoes=[],
                 ids=[],
+                regra_sugerida=padrao_para_regra(item.descricao),
             )
+        elif grupo.regra_sugerida and not regras.casa(grupo.regra_sugerida, item.descricao):
+            grupo.regra_sugerida = None
         grupo.quantidade += 1
         grupo.total_centavos += item.valor_centavos
         grupo.ids.append(item.id)
         if item.descricao not in grupo.descricoes and len(grupo.descricoes) < 6:
             grupo.descricoes.append(item.descricao)
-    return sorted(grupos.values(), key=lambda g: (-g.quantidade, -g.total_centavos))
-
-
-def contas_de_origem(session: Session) -> list[ContaDeOrigem]:
-    linhas = session.execute(
-        select(Conta.id, Conta.nome)
-        .where(Conta.tipo.in_([TipoConta.ATIVO, TipoConta.PASSIVO]))
-        .order_by(Conta.nome)
-    )
-    return [ContaDeOrigem(id=i, nome=_nome_categoria(n)) for i, n in linhas]
+    return list(grupos.values())
 
 
 def itens(session: Session, ids: list[int]) -> list[ItemRevisao]:
     if not ids:
         return []
     consulta, _ = _base()
-    linhas = session.execute(consulta.where(Transacao.id.in_(ids)).order_by(Transacao.data.desc()))
-    encontrados = [_item(linha) for linha in linhas]
+    encontrados = [_item(linha) for linha in session.execute(consulta.where(Transacao.id.in_(ids)))]
     faltando = sorted(set(ids) - {i.id for i in encontrados})
     if faltando:
         raise NaoEncontradas(faltando)
     return encontrados
 
 
-def problema_no_estabelecimento(nome: str | None) -> str | None:
-    if nome is None:
-        return None
-    if not regras.termos_distintivos(nome):
-        return (
-            f"{nome!r} não identifica um estabelecimento: Pix, cartão, parcela e afins são forma "
-            "de pagamento, não quem recebeu"
-        )
-    return None
-
-
-def _origem_principal(conteudo: ConteudoProposta) -> OrigemAlteracao:
-    origens = {e.origem for e in conteudo.evidencias}
-    for candidata in ("usuario", "pesquisa", "historico", "regra"):
-        if candidata in origens:
-            return candidata
-    return "usuario"
-
-
-def _sentido_ok(categoria: str, valor_contra: int, existentes: catalogo.Categorias) -> bool:
-    return regras.combina_com_o_sentido(categoria, -valor_contra, existentes)
-
-
-def _avaliar_regra(
-    session: Session, sugerida: RegraSugerida, selecionadas: list[ItemRevisao]
-) -> tuple[RegraNaPrevia, list[ItemRevisao]]:
-    erro = None
-    padrao = regras.normalizar(sugerida.padrao)
-    try:
-        padrao, categoria, estabelecimento = regras.validar(
-            session, sugerida.padrao, sugerida.categoria, sugerida.estabelecimento
-        )
-    except regras.RegraInvalida as falha:
-        erro = str(falha)
-        categoria, estabelecimento = sugerida.categoria, sugerida.estabelecimento
-    casa_selecionadas = sum(regras.casa(padrao, i.descricao) for i in selecionadas)
-    if erro is None and casa_selecionadas == 0:
-        erro = "a regra não casa com nenhuma das transações selecionadas"
-    correspondencias: list[ItemRevisao] = []
-    if erro is None:
-        consulta, _ = _base()
-        for linha in session.execute(consulta.limit(LIMITE_CORRESPONDENCIAS)):
-            if regras.casa(padrao, linha[2]):
-                correspondencias.append(_item(linha))
-    return (
-        RegraNaPrevia(
-            padrao=padrao,
-            categoria=categoria,
-            estabelecimento=estabelecimento,
-            valida=erro is None,
-            erro=erro,
-            existente=regras.obter_por_padrao(session, padrao),
-            casa_com_selecionadas=casa_selecionadas,
-            correspondencias_existentes=len(correspondencias),
-        ),
-        correspondencias,
-    )
-
-
-def calcular_previa(
-    session: Session, conteudo: ConteudoProposta, opcoes: OpcoesAplicacao
-) -> Previa:
-    existentes = catalogo.listar(session)
-    if conteudo.categoria is not None and conteudo.categoria not in existentes.todas:
-        raise RevisaoInvalida(f"categoria desconhecida: {conteudo.categoria}")
-    if conteudo.categoria is None and conteudo.estabelecimento is None:
-        raise RevisaoInvalida("a proposta não muda nem a categoria nem o estabelecimento")
-    problema = problema_no_estabelecimento(conteudo.estabelecimento)
-    if problema:
-        raise RevisaoInvalida(problema)
-    selecionadas = itens(session, conteudo.transacao_ids)
-    regra_previa, correspondencias = (None, [])
-    if conteudo.regra is not None:
-        regra_previa, correspondencias = _avaliar_regra(session, conteudo.regra, selecionadas)
-    if (opcoes.salvar_regra or opcoes.alcance == "correspondencias") and not (
-        regra_previa and regra_previa.valida
-    ):
-        motivo = regra_previa.erro if regra_previa else "não há regra sugerida"
-        raise RevisaoInvalida(f"não dá para usar a regra: {motivo}")
-
-    candidatas: list[tuple[ItemRevisao, Literal["selecao", "regra"], str | None, str | None]] = [
-        (item, "selecao", conteudo.categoria, conteudo.estabelecimento) for item in selecionadas
-    ]
-    if opcoes.alcance == "correspondencias" and regra_previa:
-        ja = {i.id for i in selecionadas}
-        candidatas += [
-            (item, "regra", regra_previa.categoria, regra_previa.estabelecimento)
-            for item in correspondencias
-            if item.id not in ja
-        ]
-
-    afetadas: list[LinhaPrevia] = []
-    ignoradas: list[LinhaPrevia] = []
-    manuais = efeito = 0
-    for item, por, categoria, estabelecimento in candidatas:
-        nova = categoria or item.categoria
-        estabelecimento_atual = item.estabelecimento if item.estabelecimento_confirmado else None
-        novo_estabelecimento = estabelecimento or estabelecimento_atual
-        linha = LinhaPrevia(
-            id=item.id,
-            data=item.data,
-            descricao=item.descricao,
-            valor_centavos=item.valor_centavos,
-            categoria_atual=item.categoria,
-            categoria_nova=nova,
-            estabelecimento_atual=estabelecimento_atual,
-            estabelecimento_novo=novo_estabelecimento,
-            categorizada_por=item.categorizada_por,
-            por=por,
-        )
-        if nova == item.categoria and novo_estabelecimento == estabelecimento_atual:
-            linha.motivo = "já está assim"
-            ignoradas.append(linha)
-        elif categoria and not _sentido_ok(categoria, item.valor_centavos, existentes):
-            linha.motivo = f"{categoria} não combina com o sentido desse lançamento"
-            ignoradas.append(linha)
-        elif (
-            item.categorizada_por == OrigemCategoria.USUARIO
-            and nova != item.categoria
-            and not opcoes.substituir_manuais
-        ):
-            linha.motivo = "classificada à mão antes; marque para substituir"
-            manuais += 1
-            ignoradas.append(linha)
-        else:
-            afetadas.append(linha)
-            antes = existentes.sentido(item.categoria) == "despesa"
-            depois = existentes.sentido(nova) == "despesa"
-            if antes and not depois:
-                efeito -= item.valor_centavos
-            elif depois and not antes:
-                efeito += item.valor_centavos
-
-    avisos: list[str] = []
-    transferencia = conteudo.categoria == TRANSFERENCIA_INTERNA or bool(
-        regra_previa and regra_previa.categoria == TRANSFERENCIA_INTERNA
-    )
-    if transferencia:
-        avisos.append(
-            "Transferência interna sai do total de gastos: use só para dinheiro que foi para "
-            "outra conta sua. Pix ou TED para outra pessoa ou empresa continua sendo gasto."
-        )
-    if conteudo.categoria is None:
-        avisos.append("A categoria fica como está; só o estabelecimento muda.")
-    if any(i.parcela for i in selecionadas):
-        avisos.append(
-            "Parcelas continuam com o valor de cada parcela e a descrição original; nada é "
-            "somado nem multiplicado."
-        )
-    if manuais:
-        avisos.append(f"{manuais} transação(ões) classificadas à mão antes ficam como estão.")
-
-    estado = sorted(
-        (
-            linha.id,
-            linha.categoria_atual,
-            linha.estabelecimento_atual,
-            linha.categorizada_por.value if linha.categorizada_por else None,
-        )
-        for linha in [*afetadas, *ignoradas]
-    )
-    assinatura = hashlib.sha256(
-        json.dumps(
-            {
-                "conteudo": conteudo.model_dump(mode="json"),
-                "opcoes": opcoes.model_dump(mode="json"),
-                "estado": estado,
-                "regra_existente": regra_previa.existente.model_dump()
-                if regra_previa and regra_previa.existente
-                else None,
-            },
-            sort_keys=True,
-            ensure_ascii=False,
-            default=str,
-        ).encode()
-    ).hexdigest()
-    return Previa(
-        afetadas=afetadas,
-        ignoradas=ignoradas,
-        manuais_preservadas=manuais,
-        efeito_nos_gastos_centavos=efeito,
-        regra=regra_previa,
-        avisos=avisos,
-        exige_confirmar_transferencia=transferencia,
-        assinatura=assinatura,
-    )
-
-
-def _lote_por_chave(session: Session, chave: str) -> LoteRevisao | None:
-    return session.scalar(select(LoteRevisao).where(LoteRevisao.chave_idempotencia == chave))
-
-
-def _resultado(session: Session, lote: LoteRevisao, repetido: bool) -> ResultadoLote:
-    quantidade = session.scalar(
-        select(func.count())
-        .select_from(AlteracaoRevisao)
-        .where(AlteracaoRevisao.lote_id == lote.id)
-    )
-    regra = regras.obter(session, lote.regra_id) if lote.regra_id else None
-    return ResultadoLote(lote_id=lote.id, alteradas=quantidade, regra=regra, repetido=repetido)
-
-
-def _conta_da_contrapartida(session: Session, transacao_id: int) -> Lancamento:
+def _contrapartida(session: Session, transacao_id: int) -> Lancamento:
     lancamento = session.scalar(
         select(Lancamento)
         .join(Conta, Conta.id == Lancamento.conta_id)
@@ -633,136 +271,148 @@ def _conta_da_contrapartida(session: Session, transacao_id: int) -> Lancamento:
     return lancamento
 
 
-def aplicar(
-    session: Session,
-    conteudo: ConteudoProposta,
-    opcoes: OpcoesAplicacao,
-    assinatura: str,
-    chave_idempotencia: str,
-    proposta_id: int | None = None,
-) -> ResultadoLote:
-    repetido = _lote_por_chave(session, chave_idempotencia)
-    if repetido is not None:
-        return _resultado(session, repetido, repetido=True)
-    proposta = None
-    if proposta_id is not None:
-        proposta = session.scalar(
-            select(PropostaRevisao).where(PropostaRevisao.id == proposta_id).with_for_update()
-        )
-        if proposta is None:
-            raise LookupError("proposta não encontrada")
-        if proposta.status != "pendente":
-            raise PreviaDesatualizada(f"essa proposta já foi {proposta.status}")
+def _resultado_do_lote(session: Session, lote: LoteRevisao) -> ResultadoConfirmacao:
+    alteradas = session.scalar(
+        select(func.count())
+        .select_from(AlteracaoRevisao)
+        .where(AlteracaoRevisao.lote_id == lote.id)
+    )
+    return ResultadoConfirmacao(
+        lote_id=lote.id,
+        alteradas=alteradas,
+        ignoradas=[],
+        regras_salvas=[r["padrao"] for r in lote.opcoes.get("regras", [])],
+        repetido=True,
+    )
+
+
+def _regras_por_padrao(
+    aceitas: list[tuple[ItemRevisao, Decisao]],
+) -> dict[str, tuple[str, str | None]]:
+    escolhas: dict[str, set[tuple[str, str | None]]] = {}
+    for item, decisao in aceitas:
+        padrao = padrao_para_regra(item.descricao)
+        if padrao:
+            escolhas.setdefault(padrao, set()).add((decisao.categoria, decisao.estabelecimento))
+    return {padrao: next(iter(opcoes)) for padrao, opcoes in escolhas.items() if len(opcoes) == 1}
+
+
+def confirmar(
+    session: Session, decisoes: list[Decisao], lembrar: bool, chave_idempotencia: str
+) -> ResultadoConfirmacao:
+    anterior = session.scalar(
+        select(LoteRevisao).where(LoteRevisao.chave_idempotencia == chave_idempotencia)
+    )
+    if anterior is not None:
+        return _resultado_do_lote(session, anterior)
+
+    por_id = {d.transacao_id: d for d in decisoes}
     session.execute(
         select(Transacao.id)
-        .where(Transacao.id.in_(conteudo.transacao_ids))
+        .where(Transacao.id.in_(por_id))
         .order_by(Transacao.id)
         .with_for_update()
     ).all()
-    previa = calcular_previa(session, conteudo, opcoes)
-    if previa.assinatura != assinatura:
-        raise PreviaDesatualizada(
-            "a seleção, a proposta ou as transações mudaram desde a prévia; revise e aprove de novo"
-        )
-    if previa.exige_confirmar_transferencia and not opcoes.confirmar_transferencia:
-        raise RevisaoInvalida("confirme que é dinheiro indo para outra conta sua")
-    if not previa.afetadas and not opcoes.salvar_regra:
-        raise RevisaoInvalida(
-            "nada a aplicar: todas as transações já estão assim ou foram preservadas"
+    encontrados = {i.id: i for i in itens(session, list(por_id))}
+    existentes = catalogo.listar(session)
+    permitidas = {c for c in existentes.despesa if c != CATEGORIA_REVISADA}
+
+    aceitas: list[tuple[ItemRevisao, Decisao]] = []
+    ignoradas: list[Ignorada] = []
+    for transacao_id, decisao in por_id.items():
+        item = encontrados[transacao_id]
+        if item.categoria != CATEGORIA_REVISADA:
+            ignoradas.append(Ignorada(transacao_id=transacao_id, motivo="não está mais em Outros"))
+        elif decisao.categoria not in permitidas:
+            ignoradas.append(
+                Ignorada(
+                    transacao_id=transacao_id, motivo=f"categoria inválida: {decisao.categoria}"
+                )
+            )
+        elif item.valor_centavos <= 0:
+            ignoradas.append(
+                Ignorada(transacao_id=transacao_id, motivo="não é uma saída de dinheiro")
+            )
+        else:
+            if problema_no_estabelecimento(decisao.estabelecimento):
+                decisao = decisao.model_copy(update={"estabelecimento": None})
+            aceitas.append((item, decisao))
+
+    if not aceitas:
+        return ResultadoConfirmacao(
+            lote_id=None, alteradas=0, ignoradas=ignoradas, regras_salvas=[], repetido=False
         )
 
-    partes = []
-    if conteudo.estabelecimento:
-        partes.append(conteudo.estabelecimento)
-    if conteudo.categoria:
-        partes.append(f"→ {conteudo.categoria}")
-    partes.append(f"({len(previa.afetadas)} transação(ões))")
+    categorias_usadas = sorted({d.categoria for _, d in aceitas})
     lote = LoteRevisao(
         chave_idempotencia=chave_idempotencia,
-        proposta_id=proposta.id if proposta else None,
-        opcoes={
-            "opcoes": opcoes.model_dump(mode="json"),
-            "conteudo": conteudo.model_dump(mode="json"),
-        },
-        resumo=" ".join(partes),
+        opcoes={"lembrar": lembrar, "regras": []},
+        resumo=f"{len(aceitas)} saíram de Outros para {', '.join(categorias_usadas)}",
     )
     session.add(lote)
     try:
         session.flush()
     except IntegrityError:
         session.rollback()
-        existente = _lote_por_chave(session, chave_idempotencia)
-        if existente is None:
-            raise
-        return _resultado(session, existente, repetido=True)
-
-    regra_salva = None
-    if opcoes.salvar_regra and previa.regra:
-        anterior = previa.regra.existente
-        regra_salva = regras.salvar(
-            session,
-            previa.regra.padrao,
-            previa.regra.categoria,
-            previa.regra.estabelecimento,
-            commit=False,
+        repetido = session.scalar(
+            select(LoteRevisao).where(LoteRevisao.chave_idempotencia == chave_idempotencia)
         )
-        lote.regra_id = regra_salva.id
-        lote.regra_criada = anterior is None
-        lote.regra_anterior = anterior.model_dump() if anterior else None
+        if repetido is None:
+            raise
+        return _resultado_do_lote(session, repetido)
 
-    origem_da_selecao = _origem_principal(conteudo)
-    for linha in previa.afetadas:
-        lancamento = _conta_da_contrapartida(session, linha.id)
+    salvas: list[dict] = []
+    if lembrar:
+        for padrao, (categoria, estabelecimento) in _regras_por_padrao(aceitas).items():
+            antes = regras.obter_por_padrao(session, padrao)
+            try:
+                regra = regras.salvar(session, padrao, categoria, estabelecimento, commit=False)
+            except regras.RegraInvalida:
+                continue
+            salvas.append(
+                {
+                    "id": regra.id,
+                    "padrao": padrao,
+                    "criada": antes is None,
+                    "anterior": antes.model_dump() if antes else None,
+                }
+            )
+    regra_do_padrao = {r["padrao"]: r["id"] for r in salvas}
+
+    for item, decisao in aceitas:
+        lancamento = _contrapartida(session, item.id)
         conta_anterior = session.scalar(select(Conta.nome).where(Conta.id == lancamento.conta_id))
-        transacao = session.scalar(select(Transacao).where(Transacao.id == linha.id))
+        transacao = session.scalar(select(Transacao).where(Transacao.id == item.id))
         estabelecimento_anterior = transacao.estabelecimento
         por_anterior = transacao.categorizada_por
-        origem_db = OrigemCategoria.USUARIO if linha.por == "selecao" else OrigemCategoria.REGRA
-        if linha.categoria_nova != linha.categoria_atual:
-            aplicar_categoria(session, linha.id, linha.categoria_nova, origem_db)
-            session.flush()
-        if linha.estabelecimento_novo != estabelecimento_anterior:
-            transacao.estabelecimento = linha.estabelecimento_novo
-        conta_nova = session.scalar(
-            select(Conta.nome)
-            .join(Lancamento, Lancamento.conta_id == Conta.id)
-            .where(Lancamento.id == lancamento.id)
-        )
+        aplicar_categoria(session, item.id, decisao.categoria, OrigemCategoria.USUARIO)
+        if decisao.estabelecimento:
+            transacao.estabelecimento = decisao.estabelecimento
+        session.flush()
         session.add(
             AlteracaoRevisao(
                 lote_id=lote.id,
-                transacao_id=linha.id,
+                transacao_id=item.id,
                 categoria_anterior=conta_anterior,
-                categoria_nova=conta_nova,
+                categoria_nova=nome_conta_categoria(decisao.categoria),
                 estabelecimento_anterior=estabelecimento_anterior,
-                estabelecimento_novo=linha.estabelecimento_novo,
+                estabelecimento_novo=transacao.estabelecimento,
                 categorizada_por_anterior=por_anterior,
-                categorizada_por_nova=transacao.categorizada_por,
-                origem=origem_da_selecao if linha.por == "selecao" else "regra",
-                regra_id=lote.regra_id if (linha.por == "regra" or opcoes.salvar_regra) else None,
+                categorizada_por_nova=OrigemCategoria.USUARIO,
+                origem=decisao.origem,
+                regra_id=regra_do_padrao.get(padrao_para_regra(item.descricao) or ""),
             )
         )
-    if proposta is not None:
-        proposta.status = "aplicada"
-        proposta.decidida_em = datetime.now(UTC)
-        proposta.conteudo = {**proposta.conteudo, "aprovado": conteudo.model_dump(mode="json")}
+    lote.opcoes = {"lembrar": lembrar, "regras": salvas}
+    lote.regra_id = salvas[0]["id"] if salvas else None
     session.commit()
-    return ResultadoLote(
-        lote_id=lote.id, alteradas=len(previa.afetadas), regra=regra_salva, repetido=False
+    return ResultadoConfirmacao(
+        lote_id=lote.id,
+        alteradas=len(aceitas),
+        ignoradas=ignoradas,
+        regras_salvas=[r["padrao"] for r in salvas],
+        repetido=False,
     )
-
-
-def rejeitar(session: Session, proposta_id: int) -> bool:
-    proposta = session.scalar(
-        select(PropostaRevisao).where(PropostaRevisao.id == proposta_id).with_for_update()
-    )
-    if proposta is None:
-        return False
-    if proposta.status == "pendente":
-        proposta.status = "rejeitada"
-        proposta.decidida_em = datetime.now(UTC)
-        session.commit()
-    return True
 
 
 def desfazer(session: Session, lote_id: int) -> ResultadoDesfazer:
@@ -779,7 +429,7 @@ def desfazer(session: Session, lote_id: int) -> ResultadoDesfazer:
     desfeitas = 0
     conflitos: list[int] = []
     for alteracao in alteracoes:
-        lancamento = _conta_da_contrapartida(session, alteracao.transacao_id)
+        lancamento = _contrapartida(session, alteracao.transacao_id)
         conta_atual = session.scalar(select(Conta.nome).where(Conta.id == lancamento.conta_id))
         transacao = session.scalar(select(Transacao).where(Transacao.id == alteracao.transacao_id))
         if (
@@ -788,25 +438,24 @@ def desfazer(session: Session, lote_id: int) -> ResultadoDesfazer:
         ):
             conflitos.append(alteracao.transacao_id)
             continue
-        if alteracao.categoria_anterior != alteracao.categoria_nova:
-            conta = session.scalar(select(Conta).where(Conta.nome == alteracao.categoria_anterior))
-            if conta is None:
-                conflitos.append(alteracao.transacao_id)
-                continue
-            lancamento.conta_id = conta.id
+        conta = session.scalar(select(Conta).where(Conta.nome == alteracao.categoria_anterior))
+        if conta is None:
+            conflitos.append(alteracao.transacao_id)
+            continue
+        lancamento.conta_id = conta.id
         transacao.estabelecimento = alteracao.estabelecimento_anterior
         transacao.categorizada_por = alteracao.categorizada_por_anterior
         desfeitas += 1
-    if lote.regra_id is not None:
-        if lote.regra_criada:
-            session.execute(delete(RegraCategoria).where(RegraCategoria.id == lote.regra_id))
-        elif lote.regra_anterior:
+    for regra in lote.opcoes.get("regras", []):
+        if regra["criada"]:
+            session.execute(delete(RegraCategoria).where(RegraCategoria.id == regra["id"]))
+        elif regra["anterior"]:
             session.execute(
                 update(RegraCategoria)
-                .where(RegraCategoria.id == lote.regra_id)
+                .where(RegraCategoria.id == regra["id"])
                 .values(
-                    categoria=lote.regra_anterior.get("categoria"),
-                    estabelecimento=lote.regra_anterior.get("estabelecimento"),
+                    categoria=regra["anterior"].get("categoria"),
+                    estabelecimento=regra["anterior"].get("estabelecimento"),
                 )
             )
     lote.desfeito_em = datetime.now(UTC)
@@ -814,26 +463,3 @@ def desfazer(session: Session, lote_id: int) -> ResultadoDesfazer:
     return ResultadoDesfazer(
         lote_id=lote.id, desfeitas=desfeitas, conflitos=conflitos, ja_desfeito=False
     )
-
-
-def historico(session: Session, limite: int = 30) -> list[LoteResumo]:
-    quantidade = (
-        select(func.count())
-        .select_from(AlteracaoRevisao)
-        .where(AlteracaoRevisao.lote_id == LoteRevisao.id)
-        .scalar_subquery()
-    )
-    linhas = session.execute(
-        select(LoteRevisao, quantidade).order_by(LoteRevisao.criado_em.desc()).limit(limite)
-    )
-    return [
-        LoteResumo(
-            id=lote.id,
-            resumo=lote.resumo,
-            criado_em=lote.criado_em,
-            desfeito_em=lote.desfeito_em,
-            alteracoes=qtd,
-            regra_id=lote.regra_id,
-        )
-        for lote, qtd in linhas
-    ]

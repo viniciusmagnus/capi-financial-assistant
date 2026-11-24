@@ -203,56 +203,48 @@ A ferramenta recusa destino não verificado e destino que já tem dados próprio
   As ferramentas leem o usuário de um `ContextVar` definido pelo middleware e falham fechadas sem
   ele.
 
-## Revisão assistida de "Outros"
+## Revisar Outros
 
-A tela `/revisao` deixa a pessoa conversar com o Claude sobre transações confusas e transformar
-correções aprovadas em regras. O modelo nunca altera o ledger.
+O botão "Revisar Outros", na tela do mês, manda ao Claude os gastos da pessoa que estão em
+"Outros" e devolve sugestões para uma modal de aprovação. O modelo nunca altera o ledger.
 
-- **Proposta separada da execução.** As ferramentas do assistente só leem (`buscar_historico`,
-  `pesquisar_estabelecimento`) ou registram propostas (`registrar_propostas`). Aplicar é outra
-  rota, chamada só pelo botão de aprovação.
-- **Saída do modelo validada no servidor.** Cada proposta passa por Pydantic e por checagens de
-  negócio antes de aparecer na tela. As checagens recusam:
-  - id fora da seleção;
-  - categoria que não existe;
-  - forma de pagamento usada como estabelecimento;
-  - categoria incompatível com o sentido do dinheiro;
-  - fonte citada que não veio de uma pesquisa real;
-  - regra genérica.
+- **Sugestão separada da execução.** `POST /api/revisao/analisar` só lê: as ferramentas do Claude
+  são `buscar_historico`, `pesquisar_estabelecimento` e `registrar_sugestoes`, e nada é gravado.
+  As mudanças só acontecem em `POST /api/revisao/confirmar`, com as decisões que a pessoa aprovou.
+- **Guardas determinísticas no servidor.** Cada sugestão é validada antes de chegar à tela:
+  - a categoria precisa estar na lista dela, sem "Outros", receitas nem "Transferência interna";
+  - forma de pagamento não vira estabelecimento;
+  - fonte citada precisa ter vindo de uma pesquisa real desta análise;
+  - marketplace (Amazon, Mercado Livre, Shopee, AliExpress) nunca ganha categoria automática, nem pelo histórico (o "Amazon Prime" de uma assinatura não diz o que foi comprado no marketplace);
+  - descrição sem nome de quem recebeu, como "PIX enviado", fica em Outros mesmo que o modelo sugira
+    outra coisa.
+- **Confirmação restrita.** O servidor revalida tudo na confirmação:
+  - aplica só em transações da pessoa (as de outra pessoa dão 404);
+  - só no que ainda está em "Outros";
+  - só com categorias de gasto válidas.
 
-  O que é recusado volta para o modelo como erro e aparece como "descartada".
-- **Prévia assinada.** A aprovação manda o conteúdo exato e a assinatura SHA-256 da prévia. A
-  assinatura cobre o conteúdo, as opções e o estado atual de cada transação. Se a pessoa edita a
-  proposta, muda a seleção, ou se as transações mudam no meio tempo, o servidor responde 409 e
-  exige uma nova prévia.
-- **Sem aplicação dupla.** Cada aprovação leva uma chave de idempotência única por usuário.
-  Reenvio ou clique repetido devolve o mesmo lote. As transações e a proposta ficam travadas
-  (`FOR UPDATE`) durante a aplicação.
-- **Auditoria e desfazer.** Cada mudança grava em `revisao_alteracoes` a conta anterior e a nova, o
-  estabelecimento antes e depois, quem tinha categorizado e a origem (usuário, regra, histórico ou
-  pesquisa). Desfazer um lote só reverte as transações que continuam como o lote deixou; o que
-  mudou depois é preservado e informado.
-- **Classificação manual preservada.** Transação que a pessoa já tinha classificado à mão não muda
-  sem a opção explícita "substituir".
-- **Regras específicas.** Padrão sem nenhum termo distintivo é recusado, como "PIX ENVIADO",
-  "COMPRA CARTAO" ou "PARCELA 1/6", porque esconderia gastos reais. Regra pode só nomear o
-  estabelecimento (Amazon) sem inventar categoria, e nunca altera a descrição original.
-- **Transferência interna exige confirmação.** Mover um Pix para Transferência interna tira o valor
-  dos gastos; a prévia mostra o efeito no total e a aplicação exige confirmar que o dinheiro foi
-  para outra conta da própria pessoa.
+  As linhas ficam travadas (`FOR UPDATE`) e a confirmação leva uma chave de idempotência, então um
+  clique repetido não aplica duas vezes.
+- **Regras específicas.** Com "Lembrar nas próximas importações", cada padrão vira regra só se:
+  - tiver um termo distintivo ("PIX ENVIADO" e "PARCELA" são recusados);
+  - todas as escolhas daquele padrão concordarem.
+- **Auditoria e desfazer.** Cada mudança grava em `revisao_alteracoes` a conta anterior e a nova,
+  o estabelecimento antes e depois, quem tinha categorizado e a origem (usuário, histórico ou
+  pesquisa). Desfazer reverte o lote e as regras que ele criou. O que mudou depois é preservado e
+  informado.
 - **Pesquisa na web mínima.** A busca só roda com `PESQUISA_WEB=anthropic`, numa chamada separada
-  que recebe apenas o termo e, se houver, a cidade, sem extrato nem histórico. O backend:
-  - aceita só palavras que aparecem nas descrições selecionadas;
+  que recebe apenas o termo e, se a própria descrição trouxer, o bairro ou a cidade, sem extrato
+  nem histórico. O backend:
+  - aceita só palavras que aparecem nas descrições do grupo;
   - tira números, valores, CPF e palavras de pagamento;
-  - aceita cidade só se a pessoa a escreveu ou se ela está na descrição;
   - recusa pesquisar Pix e transferências, que costumam ter nome de pessoa física.
 
   As fontes mostradas vêm dos blocos de resultado da ferramenta, nunca do texto do modelo.
 - **Dado não confiável.** Descrições bancárias e páginas pesquisadas entram marcadas como dado. As
-  ferramentas disponíveis não escrevem nada, então uma instrução escondida numa descrição ou página
-  pode no máximo gerar uma proposta, que a pessoa vê e precisa aprovar.
-- **Isolamento.** Conversas, propostas, lotes e alterações herdam `Privado`: filtro central no ORM
-  e chaves estrangeiras compostas com o dono, como o resto dos dados financeiros.
+  ferramentas não escrevem nada, então uma instrução escondida numa descrição ou página pode no
+  máximo virar uma sugestão, que a pessoa vê e precisa aprovar.
+- **Isolamento.** Lotes e alterações herdam `Privado`: filtro central no ORM e chaves estrangeiras
+  compostas com o dono, como o resto dos dados financeiros.
 
 ## Limitações reais
 
@@ -262,9 +254,11 @@ correções aprovadas em regras. O modelo nunca altera o ledger.
 - **Nome de pessoa fora do Pix:** a pesquisa recusa Pix e transferências, mas não reconhece nome de
   pessoa física em outros formatos (um "PAG*JoaoSilva" de maquininha vai para a busca como termo).
 - **Pesquisa e prompt injection:** o resumo da busca é produzido por um modelo que leu páginas
-  externas. Ele chega ao assistente marcado como dado e só pode virar proposta, mas o texto da
-  proposta pode refletir uma página enganosa; por isso a origem "pesquisa" aparece destacada e com
-  as fontes.
+  externas. Ele chega ao Claude marcado como dado e só pode virar sugestão, mas a justificativa
+  pode refletir uma página enganosa; por isso cada sugestão de pesquisa mostra as fontes.
+- **Análise limitada:** cada clique analisa os 300 gastos mais recentes em Outros e faz no máximo
+  6 pesquisas; o resto fica para o próximo clique. Estabelecimento pequeno que não aparece na web
+  (ex.: uma loja de bairro) fica em Outros até a pessoa escolher a categoria na modal.
 - **Tamanho mínimo da senha:** 12 caracteres, abaixo dos 15 que o NIST pede para senha como fator
   único.
 - **Revogação do JWT:** o JWT dura 5 minutos. Se ele vazasse do servidor do Next, valeria até

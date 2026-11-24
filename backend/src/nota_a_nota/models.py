@@ -235,36 +235,11 @@ _ORIGEM_CATEGORIA = Enum(
 )
 
 
-class ConversaRevisao(Privado, Base):
-    __tablename__ = "revisao_conversas"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    mensagens: Mapped[list] = mapped_column(JSONB, default=list)
-    historico: Mapped[list] = mapped_column(JSONB, default=list)
-    fontes: Mapped[list] = mapped_column(JSONB, default=list)
-    criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    atualizada_em: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
-    )
-
-
-class PropostaRevisao(Privado, Base):
-    __tablename__ = "revisao_propostas"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    conversa_id: Mapped[int | None] = mapped_column(ForeignKey("revisao_conversas.id"))
-    status: Mapped[str] = mapped_column(String(12), default="pendente")
-    conteudo: Mapped[dict] = mapped_column(JSONB)
-    criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    decidida_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-
-
 class LoteRevisao(Privado, Base):
     __tablename__ = "revisao_lotes"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     chave_idempotencia: Mapped[str] = mapped_column(String(64))
-    proposta_id: Mapped[int | None] = mapped_column(ForeignKey("revisao_propostas.id"))
     regra_id: Mapped[int | None] = mapped_column(ForeignKey("regras_categoria.id"))
     regra_criada: Mapped[bool] = mapped_column(default=False)
     regra_anterior: Mapped[dict | None] = mapped_column(JSONB)
