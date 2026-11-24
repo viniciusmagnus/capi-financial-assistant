@@ -1,0 +1,580 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-23T20:00:00.000Z",
+  "title": "Design System: Capi (nota-a-nota)",
+  "extensions": {
+    "colorMeta": {
+      "fundo": {
+        "role": "neutral",
+        "displayName": "Fundo do rio",
+        "canonical": "#0a1c1b",
+        "tonalRamp": [
+          "#040b0b",
+          "#061110",
+          "#081615",
+          "#091a19",
+          "#273736",
+          "#586564",
+          "#899292",
+          "#babfbf"
+        ]
+      },
+      "superficie": {
+        "role": "neutral",
+        "displayName": "Superfície",
+        "canonical": "#0f2726",
+        "tonalRamp": [
+          "#06100f",
+          "#091717",
+          "#0c1e1e",
+          "#0e2423",
+          "#2c4140",
+          "#5c6c6b",
+          "#8c9797",
+          "#bcc3c2"
+        ]
+      },
+      "elevada": {
+        "role": "neutral",
+        "displayName": "Elevada",
+        "canonical": "#15332f",
+        "tonalRamp": [
+          "#081413",
+          "#0d1f1c",
+          "#102825",
+          "#132f2b",
+          "#314b48",
+          "#607472",
+          "#8f9d9b",
+          "#bdc6c5"
+        ]
+      },
+      "texto": {
+        "role": "neutral",
+        "displayName": "Texto creme",
+        "canonical": "#f3ebe1",
+        "tonalRamp": [
+          "#353837",
+          "#6b6b67",
+          "#a19e98",
+          "#d8d1c9",
+          "#f4ece3",
+          "#f6efe6",
+          "#f8f1e9",
+          "#faf4ec"
+        ]
+      },
+      "suave": {
+        "role": "neutral",
+        "displayName": "Texto suave",
+        "canonical": "#9fbab4",
+        "tonalRamp": [
+          "#404a48",
+          "#5f706c",
+          "#7c918c",
+          "#92aba6",
+          "#abc2bd",
+          "#bed0cc",
+          "#d1dedb",
+          "#e4ecea"
+        ]
+      },
+      "borda": {
+        "role": "neutral",
+        "displayName": "Linha de água",
+        "canonical": "#1f4440",
+        "tonalRamp": [
+          "#0c1b1a",
+          "#132926",
+          "#183532",
+          "#1d3f3b",
+          "#3a5a57",
+          "#67807d",
+          "#93a5a3",
+          "#c0cbca"
+        ]
+      },
+      "trilho": {
+        "role": "neutral",
+        "displayName": "Trilho",
+        "canonical": "#183834",
+        "tonalRamp": [
+          "#0a1615",
+          "#0e221f",
+          "#132c29",
+          "#163430",
+          "#34504c",
+          "#627875",
+          "#909f9e",
+          "#bec7c6"
+        ]
+      },
+      "poente": {
+        "role": "primary",
+        "displayName": "Laranja do poente",
+        "canonical": "#ff7a3d",
+        "tonalRamp": [
+          "#372116",
+          "#703b21",
+          "#a9542c",
+          "#e26d37",
+          "#ff854d",
+          "#ff9b6c",
+          "#ffb18b",
+          "#ffc7aa"
+        ]
+      },
+      "destaque-fundo": {
+        "role": "primary",
+        "displayName": "Fundo de destaque",
+        "canonical": "#3a2219",
+        "tonalRamp": [
+          "#10100f",
+          "#1c1512",
+          "#281a15",
+          "#341f18",
+          "#4b352c",
+          "#6d5a51",
+          "#8e7f76",
+          "#b0a49c"
+        ]
+      },
+      "sobre-destaque": {
+        "role": "neutral",
+        "displayName": "Tinta sobre destaque",
+        "canonical": "#1a0f0a",
+        "tonalRamp": [
+          "#090c0c",
+          "#0e0d0b",
+          "#130e0b",
+          "#180f0a",
+          "#2e231e",
+          "#554b46",
+          "#7c746e",
+          "#a39c96"
+        ]
+      },
+      "sol": {
+        "role": "secondary",
+        "displayName": "Sol dourado",
+        "canonical": "#ffb347",
+        "tonalRamp": [
+          "#372d18",
+          "#705325",
+          "#a97933",
+          "#e2a040",
+          "#ffb956",
+          "#ffc573",
+          "#ffd191",
+          "#ffdeae"
+        ]
+      },
+      "correnteza": {
+        "role": "tertiary",
+        "displayName": "Turquesa da correnteza",
+        "canonical": "#5fd4c4",
+        "tonalRamp": [
+          "#173331",
+          "#2c615b",
+          "#408f85",
+          "#55bdaf",
+          "#6dd7c8",
+          "#88ded0",
+          "#a4e4d8",
+          "#bfebe0"
+        ]
+      },
+      "correnteza-fundo": {
+        "role": "tertiary",
+        "displayName": "Fundo da correnteza",
+        "canonical": "#12353a",
+        "tonalRamp": [
+          "#081315",
+          "#0b1d20",
+          "#0e272a",
+          "#113035",
+          "#26464a",
+          "#4f686a",
+          "#788989",
+          "#a0aba9"
+        ]
+      },
+      "brasa": {
+        "role": "error",
+        "displayName": "Brasa",
+        "canonical": "#ff6b6b",
+        "tonalRamp": [
+          "#371e1f",
+          "#703435",
+          "#a94a4a",
+          "#e26060",
+          "#ff7777",
+          "#ff908e",
+          "#ffa8a5",
+          "#ffc1bd"
+        ]
+      },
+      "ceu-alto": {
+        "role": "neutral",
+        "displayName": "Céu alto",
+        "canonical": "#241d47",
+        "tonalRamp": [
+          "#0b0f18",
+          "#121325",
+          "#191733",
+          "#201b40",
+          "#373056",
+          "#5c5673",
+          "#827c91",
+          "#a7a2ae"
+        ]
+      },
+      "ceu-meio": {
+        "role": "neutral",
+        "displayName": "Céu meio",
+        "canonical": "#6e3a68",
+        "tonalRamp": [
+          "#1a141e",
+          "#321f33",
+          "#4a2a48",
+          "#62355d",
+          "#7a4a74",
+          "#936b8c",
+          "#ac8ca4",
+          "#c5adbb"
+        ]
+      },
+      "ceu-baixo": {
+        "role": "neutral",
+        "displayName": "Céu baixo",
+        "canonical": "#d9684f",
+        "tonalRamp": [
+          "#2f1e19",
+          "#603329",
+          "#904838",
+          "#c15d47",
+          "#dc755d",
+          "#e38e79",
+          "#e9a795",
+          "#f0c0b1"
+        ]
+      },
+      "horizonte": {
+        "role": "neutral",
+        "displayName": "Horizonte",
+        "canonical": "#ffb36b",
+        "tonalRamp": [
+          "#372d1f",
+          "#705335",
+          "#a9794a",
+          "#e2a060",
+          "#ffb977",
+          "#ffc58e",
+          "#ffd1a5",
+          "#ffdebd"
+        ]
+      },
+      "agua": {
+        "role": "neutral",
+        "displayName": "Água",
+        "canonical": "#0d2624",
+        "tonalRamp": [
+          "#050f0e",
+          "#081716",
+          "#0a1e1c",
+          "#0c2321",
+          "#2a403e",
+          "#5a6b6a",
+          "#8b9796",
+          "#bbc2c2"
+        ]
+      },
+      "agua-clara": {
+        "role": "neutral",
+        "displayName": "Água clara",
+        "canonical": "#1b3a38",
+        "tonalRamp": [
+          "#0b1716",
+          "#102322",
+          "#152d2c",
+          "#193534",
+          "#365250",
+          "#647978",
+          "#92a09f",
+          "#bfc8c7"
+        ]
+      },
+      "ceu-brasa-alto": {
+        "role": "neutral",
+        "displayName": "Céu em brasa alto",
+        "canonical": "#160f2b",
+        "tonalRamp": [
+          "#090611",
+          "#0d091a",
+          "#110c22",
+          "#140e28",
+          "#322c44",
+          "#615c6f",
+          "#8f8c99",
+          "#bebcc4"
+        ]
+      },
+      "ceu-brasa-meio": {
+        "role": "neutral",
+        "displayName": "Céu em brasa meio",
+        "canonical": "#3f1c47",
+        "tonalRamp": [
+          "#190b1c",
+          "#26112b",
+          "#311637",
+          "#3a1a41",
+          "#56375d",
+          "#7c6582",
+          "#a392a7",
+          "#c9bfcb"
+        ]
+      },
+      "ceu-brasa-baixo": {
+        "role": "neutral",
+        "displayName": "Céu em brasa baixo",
+        "canonical": "#8f3443",
+        "tonalRamp": [
+          "#39151b",
+          "#561f28",
+          "#702934",
+          "#84303e",
+          "#9c4c5a",
+          "#b3757f",
+          "#c99ea5",
+          "#e0c6ca"
+        ]
+      },
+      "horizonte-brasa": {
+        "role": "neutral",
+        "displayName": "Horizonte em brasa",
+        "canonical": "#c8553f",
+        "tonalRamp": [
+          "#502219",
+          "#783326",
+          "#9c4231",
+          "#b84e3a",
+          "#cf6956",
+          "#da8b7c",
+          "#e5ada3",
+          "#f0cfc9"
+        ]
+      },
+      "sol-claro": {
+        "role": "secondary",
+        "displayName": "Sol claro",
+        "canonical": "#fff4cf",
+        "tonalRamp": [
+          "#666253",
+          "#99927c",
+          "#c7bea1",
+          "#ebe0be",
+          "#fff5d5",
+          "#fff8de",
+          "#fffae8",
+          "#fffcf2"
+        ]
+      },
+      "sol-meio": {
+        "role": "secondary",
+        "displayName": "Sol meio",
+        "canonical": "#ffd27a",
+        "tonalRamp": [
+          "#665431",
+          "#997e49",
+          "#c7a45f",
+          "#ebc170",
+          "#ffd78a",
+          "#ffe0a5",
+          "#ffe9bf",
+          "#fff2da"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display largo",
+        "purpose": "Gastos do mês na faixa de água da cena (36px, 48px a partir de sm)."
+      },
+      "headline": {
+        "displayName": "Título largo",
+        "purpose": "Títulos de seção, chamada da importação e título das folhas (24px / 20px / 18px)."
+      },
+      "title": {
+        "displayName": "Título",
+        "purpose": "Sugestões da Capi (18px, 600)."
+      },
+      "body": {
+        "displayName": "Corpo",
+        "purpose": "Texto de interface em 14px e 16px, largura normal."
+      },
+      "label": {
+        "displayName": "Rótulo",
+        "purpose": "Legendas em 12px e abas inferiores em 11px."
+      },
+      "figure": {
+        "displayName": "Número largo",
+        "purpose": "Valores em reais em linhas, números sob a cena e economia (16-30px, largo, 600-700)."
+      }
+    },
+    "shadows": [
+      {
+        "name": "brilho-do-sol",
+        "value": "0 4px (18 a 68)px (4 a 20)px, sol ou brasa a 20-65% (calculado pela força do sol)",
+        "purpose": "Único halo do sistema: o sol da cena; cresce com o gasto e vira brasa quando passou do limite."
+      }
+    ],
+    "motion": [
+      {
+        "name": "subida-do-sol",
+        "value": "1.8s, ease-out exponencial (1 - 2^(-10t)), em JavaScript",
+        "purpose": "O sol anda pelo arco do horizonte esquerdo até a fração gasto/limite (máximo 97% do arco), uma vez ao carregar; sem animação com prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "conteudo-max",
+        "value": "48rem (max-w-3xl) na tela do mês; 64rem (max-w-5xl) no topo"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botão primário (escolher arquivos)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ação primária da tela: laranja do poente cheio, tinta escura por cima.",
+      "html": "<label class=\"ds-btn-primary\">Escolher arquivos</label>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--destaque,#ff7a3d);color:var(--sobre-destaque,#1a0f0a);border-radius:12px;padding:10px 16px;font-weight:600;cursor:pointer;font-family:inherit}.ds-btn-primary:hover{filter:brightness(1.06)}.ds-btn-primary:focus-within,.ds-btn-primary:focus-visible{outline:2px solid var(--sol,#ffb347);outline-offset:2px}"
+    },
+    {
+      "name": "Botão secundário",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Contorno de água, sem preenchimento; hover sobe para a cor elevada.",
+      "html": "<button class=\"ds-btn-secondary\">Cancelar</button>",
+      "css": ".ds-btn-secondary{background:transparent;color:var(--texto,#f3ebe1);border:1px solid var(--borda,#1f4440);border-radius:12px;padding:10px 16px;font-weight:500;font-family:inherit;cursor:pointer}.ds-btn-secondary:hover{background:var(--elevada,#15332f)}.ds-btn-secondary:focus-visible{outline:2px solid var(--sol,#ffb347);outline-offset:2px}"
+    },
+    {
+      "name": "Faixa de importação",
+      "kind": "custom",
+      "refersTo": "import-strip",
+      "description": "Faixa arredondada que convida a soltar arquivos; no estado vazio ganha o laranja do poente.",
+      "html": "<div class=\"ds-import\"><div><p class=\"ds-import-t\">Solte aqui o extrato da conta e a fatura do cartão</p><p class=\"ds-import-s\">OFX, CSV ou o PDF da fatura · vários de uma vez</p></div><span class=\"ds-import-b\">Escolher arquivos</span></div>",
+      "css": ".ds-import{display:flex;align-items:center;gap:12px;border:1px solid rgba(255,122,61,.6);background:var(--destaque-fundo,#3a2219);border-radius:16px;padding:20px;color:var(--texto,#f3ebe1);font-family:inherit}.ds-import>div{flex:1}.ds-import-t{margin:0;font-size:20px;font-weight:700;font-variation-settings:'wdth' 118;letter-spacing:-.02em}.ds-import-s{margin:4px 0 0;font-size:14px;color:var(--suave,#9fbab4)}.ds-import-b{background:var(--destaque,#ff7a3d);color:var(--sobre-destaque,#1a0f0a);border-radius:12px;padding:10px 16px;font-weight:600}"
+    },
+    {
+      "name": "Cena do mês (céu, arco e sol)",
+      "kind": "card",
+      "refersTo": "scene-card",
+      "description": "Hero do mês: céu em degradê com arco pontilhado, sol que anda pelo arco conforme o gasto, Capi no horizonte e faixa de água com balão, gasto e linha do teto.",
+      "html": "<section class=\"ds-cena\"><div class=\"ds-ceu\"><svg viewBox=\"0 0 100 100\" preserveAspectRatio=\"none\" class=\"ds-arco\"><path d=\"M 12 100 A 38 76 0 0 1 88 100\" pathLength=\"100\" fill=\"none\" stroke=\"#f3ebe1\" stroke-opacity=\".22\" stroke-width=\"1.5\" stroke-dasharray=\"1 2.5\" vector-effect=\"non-scaling-stroke\"/><path d=\"M 12 100 A 38 76 0 0 1 63 33\" fill=\"none\" stroke=\"#ffb347\" stroke-opacity=\".6\" stroke-width=\"2\" stroke-linecap=\"round\" vector-effect=\"non-scaling-stroke\"/></svg><p class=\"ds-ceu-l\">Novembro de 2026</p><div class=\"ds-sol\"></div></div><div class=\"ds-agua\"><div class=\"ds-balao\">Capi: Tá no ritmo, dá pra seguir assim.</div><p class=\"ds-ag-l\">Gastos de novembro</p><p class=\"ds-ag-n\">R$ 4.210,00</p><p class=\"ds-ag-l\">Pode gastar R$ 1.790,00 do teto de R$ 6.000,00</p></div></section>",
+      "css": ".ds-cena{position:relative;overflow:hidden;background:var(--agua,#0d2624);border-radius:16px;color:var(--texto,#f3ebe1);font-family:inherit}.ds-ceu{position:relative;height:256px;overflow:hidden;background:linear-gradient(to bottom,var(--ceu-alto,#241d47) 0%,var(--ceu-meio,#6e3a68) 45%,var(--ceu-baixo,#d9684f) 82%,var(--horizonte,#ffb36b) 100%)}.ds-arco{position:absolute;inset:0;width:100%;height:100%}.ds-ceu-l{position:relative;margin:0;padding:16px 24px 0;font-size:12px;font-weight:500;opacity:.85}.ds-sol{position:absolute;left:63%;top:33%;width:60px;height:60px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 50% 45%,var(--sol-claro,#fff4cf) 0%,color-mix(in oklab,var(--sol-meio,#ffd27a) 40%,var(--poente,#ff7a3d)) 70%);box-shadow:0 4px 40px 12px color-mix(in srgb,var(--sol,#ffb347) 45%,transparent)}.ds-agua{position:relative;padding:16px 24px 20px;text-align:center;border-top:1px solid rgba(255,179,107,.6);background:linear-gradient(to bottom,var(--agua-clara,#1b3a38),var(--agua,#0d2624) 60%)}.ds-balao{position:relative;max-width:22rem;margin:0 auto 16px;padding:10px 16px;border-radius:16px;background:var(--balao,#f3ebe1);color:var(--balao-texto,#0b1a1c);font-size:14px}.ds-ag-l{margin:2px 0;font-size:14px;color:var(--suave,#9fbab4)}.ds-ag-n{margin:2px 0;font-size:36px;font-weight:700;font-variation-settings:\"wdth\" 118;letter-spacing:-.02em}"
+    },
+    {
+      "name": "Linha de categoria com barra",
+      "kind": "custom",
+      "refersTo": "bar-row",
+      "description": "Linha fina tingida em vez de caixa: nome, valor largo e barra sobre trilho.",
+      "html": "<div class=\"ds-row\"><div class=\"ds-row-h\"><span>Mercado</span><b>R$ 1.320,00</b></div><div class=\"ds-trilho\"><div class=\"ds-barra\"></div></div></div>",
+      "css": ".ds-row{padding:12px 4px;border-bottom:1px solid var(--borda,#1f4440);color:var(--texto,#f3ebe1);font-family:inherit}.ds-row:hover{background:var(--superficie,#0f2726)}.ds-row-h{display:flex;justify-content:space-between;gap:8px}.ds-row-h b{font-weight:600;font-variation-settings:'wdth' 118;letter-spacing:-.02em}.ds-trilho{margin-top:6px;height:10px;border-radius:2px;background:var(--trilho,#183834)}.ds-barra{height:10px;width:62%;border-radius:2px;background:var(--poente,#ff7a3d)}"
+    },
+    {
+      "name": "Navegação (aba inferior, celular)",
+      "kind": "nav",
+      "refersTo": "nav-mobile",
+      "description": "Quatro destinos com ícone e rótulo de 11px; o atual fica laranja do poente.",
+      "html": "<nav class=\"ds-nav\"><a aria-current=\"page\">Mês</a><a>Chat</a><a>Busca</a><a>Regras</a></nav>",
+      "css": ".ds-nav{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--borda,#1f4440);background:rgba(10,28,27,.95);font-family:inherit}.ds-nav a{padding:12px 0;text-align:center;font-size:11px;color:var(--suave,#9fbab4)}.ds-nav a[aria-current=page]{color:var(--poente,#ff7a3d)}"
+    },
+    {
+      "name": "Abas de mês",
+      "kind": "chip",
+      "refersTo": "month-tabs",
+      "description": "Abas em linha, rolagem horizontal; a atual vira superfície com peso 600 e é centralizada, com as pontas esmaecidas quando transbordam.",
+      "html": "<div class=\"ds-tabs\"><a aria-current=\"page\">Nov</a><a>Out</a><a>Set</a></div>",
+      "css": ".ds-tabs{display:flex;gap:4px;font-family:inherit}.ds-tabs a{padding:6px 12px;border-radius:8px;font-size:14px;color:var(--suave,#9fbab4)}.ds-tabs a:hover{background:var(--superficie,#0f2726);color:var(--texto,#f3ebe1)}.ds-tabs a[aria-current=page]{background:var(--superficie,#0f2726);color:var(--texto,#f3ebe1);font-weight:600}"
+    },
+    {
+      "name": "Últimos gastos",
+      "kind": "custom",
+      "refersTo": "recent-list",
+      "description": "Lista sem caixa: descrição, data e categoria à esquerda, valor largo à direita.",
+      "html": "<ul class=\"ds-ult\"><li><div><p class=\"ds-ult-d\">Padaria Central</p><p class=\"ds-ult-s\">12/11 · Mercado</p></div><b>R$ 38,50</b></li><li><div><p class=\"ds-ult-d\">Uber</p><p class=\"ds-ult-s\">11/11 · Transporte</p></div><b>R$ 22,90</b></li></ul>",
+      "css": ".ds-ult{list-style:none;margin:0;padding:0;border-top:1px solid var(--borda,#1f4440);border-bottom:1px solid var(--borda,#1f4440);color:var(--texto,#f3ebe1);font-family:inherit;font-size:14px}.ds-ult li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0}.ds-ult li+li{border-top:1px solid var(--borda,#1f4440)}.ds-ult p{margin:0}.ds-ult-d{font-weight:500}.ds-ult-s{color:var(--suave,#9fbab4)}.ds-ult b{font-weight:600;font-variation-settings:\"wdth\" 118;letter-spacing:-.02em}"
+    },
+    {
+      "name": "Campo / seletor",
+      "kind": "input",
+      "refersTo": "select",
+      "description": "Contorno fino de água sobre superfície; foco com anel dourado.",
+      "html": "<select class=\"ds-select\"><option>Mercado</option></select>",
+      "css": ".ds-select{width:100%;border:1px solid var(--borda,#1f4440);background:var(--superficie,#0f2726);color:var(--texto,#f3ebe1);border-radius:12px;padding:10px 12px;font-size:14px;font-family:inherit}.ds-select:focus-visible{outline:2px solid var(--sol,#ffb347);outline-offset:2px}"
+    },
+    {
+      "name": "Sugestão da Capi",
+      "kind": "custom",
+      "refersTo": "insight-item",
+      "description": "Item de lista com valor de economia em turquesa largo; texto limitado a 65ch.",
+      "html": "<li class=\"ds-ins\"><div class=\"ds-ins-h\"><h3>Delivery acima do usual</h3><p><b>R$ 180,00</b> <span>por mês de economia possível</span></p></div><p class=\"ds-ins-t\">Fato do extrato em uma frase.</p></li>",
+      "css": ".ds-ins{list-style:none;padding:20px 0;border-bottom:1px solid var(--borda,#1f4440);color:var(--texto,#f3ebe1);font-family:inherit}.ds-ins-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 16px}.ds-ins-h h3{margin:0;font-size:18px;font-weight:600}.ds-ins-h p{margin:0;font-size:14px}.ds-ins-h b{color:var(--correnteza,#5fd4c4);font-weight:700;font-variation-settings:'wdth' 118;letter-spacing:-.02em}.ds-ins-h span{color:var(--suave,#9fbab4)}.ds-ins-t{max-width:65ch;font-size:14px;margin:8px 0 0}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Guaíba ao entardecer",
+    "overview": "O mês é um fim de tarde no Guaíba: um arco pontilhado cruza o céu e o sol anda por ele, do horizonte da esquerda ao da direita, conforme o gasto chega ao teto do mês (ou, sem teto, à renda mensal inteira). Chão de rio escuro (verde-água profundo), céu em violeta, rosa e laranja, sol dourado. Só escuro, por decisão: o uso é no celular, à noite.\n\nArchivo com eixo de largura faz os números largos e pesados e deixa o texto de interface normal. Linhas finas tingidas de verde-água separam em vez de caixas; a profundidade vem da troca de tom, e a única sombra é o halo do sol. A Capi, capivara de desenho animado, espia da água no horizonte e fala num balão creme.",
+    "keyCharacteristics": [
+      "Escuro único: fundo #0a1c1b, texto creme #f3ebe1",
+      "Cor com função: poente = gasto, correnteza = renda, brasa = estourou, sol = atenção",
+      "Archivo wdth 118 nos números, 100 na interface",
+      "Linhas de água no lugar de caixas; cantos de 8 a 16px",
+      "Um gesto de movimento: o sol subindo pelo arco"
+    ],
+    "rules": [
+      {
+        "name": "O Sol Anda Uma Vez",
+        "section": "elevation",
+        "body": "O sol anda pelo arco até a fração gasto/limite ao carregar: uma vez, 1.8s, ease-out exponencial em JavaScript. Com redução de movimento já nasce no lugar. Passou do limite, o céu vira a variante em brasa e o sol fica junto ao horizonte da direita, em brasa."
+      },
+      {
+        "name": "Cor É Direção do Dinheiro",
+        "section": "colors",
+        "body": "Laranja do poente marca gasto, turquesa da correnteza marca renda e entrada, brasa marca o que passou do limite, sol dourado marca atenção e foco. Nunca decorativo."
+      },
+      {
+        "name": "Largo Só nos Números",
+        "section": "typography",
+        "body": "Archivo largo (wdth 118) e pesado em números e títulos de seção; interface em largura normal. O eixo é a hierarquia."
+      },
+      {
+        "name": "Linha no Lugar de Caixa",
+        "section": "elevation",
+        "body": "Separação por linha fina de água (--borda) e por troca de tom; sombra só no sol."
+      }
+    ],
+    "dos": [
+      "Do usar poente para gasto, correnteza para renda e entrada, brasa só para o que passou do limite.",
+      "Do usar .largo (wdth 118, -0.02em) em números e títulos de seção, e tabular-nums no corpo.",
+      "Do separar com 1px de --borda e com troca de tom (fundo, superficie, elevada).",
+      "Do manter o anel de foco de 2px em --sol com 2px de offset.",
+      "Do animar o sol uma vez ao carregar e pulá-la com prefers-reduced-motion.",
+      "Do comparar com a renda mensal inteira; não existe renda proporcional.",
+      "Do ler o texto sobre o céu em --texto, nunca em poente ou sol."
+    ],
+    "donts": [
+      "Don't voltar a cartões brancos iguais nem a número grande solto num retângulo.",
+      "Don't criar tema claro nesta versão.",
+      "Don't usar laranja do poente como cor decorativa nem para renda.",
+      "Don't pôr sombra em cartões; o halo do sol é a única sombra.",
+      "Don't usar serviço externo de logos; ícones são SVG do lucide-react."
+    ]
+  }
+}

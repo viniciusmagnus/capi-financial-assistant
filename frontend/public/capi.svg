@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="ceu" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#241d47"/>
+      <stop offset="0.5" stop-color="#6e3a68"/>
+      <stop offset="0.85" stop-color="#d9684f"/>
+      <stop offset="1" stop-color="#ffb36b"/>
+    </linearGradient>
+    <linearGradient id="agua" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b3a38"/>
+      <stop offset="1" stop-color="#0d2624"/>
+    </linearGradient>
+    <radialGradient id="sol" cx="0.5" cy="0.45" r="0.5">
+      <stop offset="0" stop-color="#fff4cf"/>
+      <stop offset="0.5" stop-color="#ffd27a"/>
+      <stop offset="1" stop-color="#ffb347"/>
+    </radialGradient>
+    <clipPath id="ladrilho">
+      <rect width="64" height="64" rx="14"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#ladrilho)">
+    <rect width="64" height="41" fill="url(#ceu)"/>
+    <circle cx="51" cy="38" r="8.5" fill="url(#sol)"/>
+    <g transform="translate(2 13) scale(0.29)">
+      <ellipse cx="46" cy="34" rx="10" ry="8" fill="#7f5636"/>
+      <ellipse cx="114" cy="34" rx="10" ry="8" fill="#7f5636"/>
+      <rect x="28" y="30" width="104" height="98" rx="44" fill="#a9774e"/>
+      <ellipse cx="80" cy="96" rx="36" ry="24" fill="#c79a71"/>
+      <ellipse cx="71" cy="88" rx="4" ry="3" fill="#2b1d14"/>
+      <ellipse cx="89" cy="88" rx="4" ry="3" fill="#2b1d14"/>
+      <g fill="none" stroke="#2b1d14" stroke-width="6" stroke-linecap="round">
+        <path d="M50 64 q8 7 16 0"/>
+        <path d="M94 64 q8 7 16 0"/>
+      </g>
+    </g>
+    <rect y="41" width="64" height="23" fill="url(#agua)"/>
+    <path d="M0 41 H64" stroke="#ffb36b" stroke-opacity="0.7" stroke-width="1"/>
+    <rect x="45" y="44.5" width="12" height="1.6" rx="0.8" fill="#ffc46b" opacity="0.7"/>
+    <rect x="47" y="48" width="8" height="1.6" rx="0.8" fill="#ffc46b" opacity="0.45"/>
+    <path d="M6 45.5 q4 -2 8 0 M30 45.5 q4 -2 8 0" fill="none" stroke="#9fbab4" stroke-opacity="0.6" stroke-width="1.2" stroke-linecap="round"/>
+  </g>
+</svg>

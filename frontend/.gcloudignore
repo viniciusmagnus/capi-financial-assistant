@@ -1,0 +1,7 @@
+.gcloudignore
+node_modules/
+.next/
+.env*
+*.tsbuildinfo
+next-env.d.ts
+PorDoSol.tsx

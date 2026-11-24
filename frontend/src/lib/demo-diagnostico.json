@@ -1,0 +1,842 @@
+{
+ "mes": "2026-10",
+ "meses_disponiveis": [
+  "2026-10"
+ ],
+ "renda": {
+  "valor_centavos": 520000,
+  "variavel": false,
+  "atualizada_em": "2026-11-23T14:04:47.995302Z"
+ },
+ "renda_referencia_centavos": 520000,
+ "periodo": {
+  "inicio": "2026-10-01",
+  "fim": "2026-10-31",
+  "dias_cobertos": 31,
+  "dias_no_mes": 31,
+  "parcial": false,
+  "descricao": "O extrato cobre o mês inteiro (31 dias)."
+ },
+ "contas": [
+  {
+   "nome": "Conta corrente",
+   "tipo": "ativo",
+   "inicio": "2026-10-01",
+   "fim": "2026-10-31",
+   "cobre_o_mes": true,
+   "anotada_a_mao": false
+  },
+  {
+   "nome": "Cartão de crédito",
+   "tipo": "passivo",
+   "inicio": "2026-10-01",
+   "fim": "2026-10-31",
+   "cobre_o_mes": true,
+   "anotada_a_mao": false
+  }
+ ],
+ "totais": {
+  "gastos_centavos": 427835,
+  "quantidade_gastos": 38,
+  "sem_categoria_centavos": 7790,
+  "sem_categoria_quantidade": 1,
+  "para_revisar": 2,
+  "estornos_centavos": 0,
+  "entradas": [
+   {
+    "categoria": "Salário",
+    "total_centavos": 520000,
+    "quantidade": 1
+   },
+   {
+    "categoria": "A classificar",
+    "total_centavos": 1530,
+    "quantidade": 1
+   }
+  ],
+  "transferencias_saida_centavos": 230000,
+  "transferencias_entrada_centavos": 230000
+ },
+ "comprometimento": 0.8227596153846154,
+ "diferenca_centavos": 92165,
+ "projecao": null,
+ "base": "mes_completo",
+ "fator_base": 1.0,
+ "categorias": [
+  {
+   "chave": "Moradia",
+   "nome": "Moradia",
+   "marca": null,
+   "categoria": "Moradia",
+   "total_centavos": 176980,
+   "quantidade": 3,
+   "pct_gastos": 0.4136641462245959,
+   "pct_renda": 0.34034615384615385
+  },
+  {
+   "chave": "Mercado",
+   "nome": "Mercado",
+   "marca": null,
+   "categoria": "Mercado",
+   "total_centavos": 82285,
+   "quantidade": 4,
+   "pct_gastos": 0.1923288183528697,
+   "pct_renda": 0.15824038461538462
+  },
+  {
+   "chave": "Restaurantes e delivery",
+   "nome": "Restaurantes e delivery",
+   "marca": null,
+   "categoria": "Restaurantes e delivery",
+   "total_centavos": 55550,
+   "quantidade": 11,
+   "pct_gastos": 0.12983977467949093,
+   "pct_renda": 0.10682692307692308
+  },
+  {
+   "chave": "Transporte",
+   "nome": "Transporte",
+   "marca": null,
+   "categoria": "Transporte",
+   "total_centavos": 22010,
+   "quantidade": 9,
+   "pct_gastos": 0.05144506643916463,
+   "pct_renda": 0.042326923076923074
+  },
+  {
+   "chave": "Saúde",
+   "nome": "Saúde",
+   "marca": null,
+   "categoria": "Saúde",
+   "total_centavos": 19770,
+   "quantidade": 2,
+   "pct_gastos": 0.04620940315775942,
+   "pct_renda": 0.03801923076923077
+  },
+  {
+   "chave": "Vestuário",
+   "nome": "Vestuário",
+   "marca": null,
+   "categoria": "Vestuário",
+   "total_centavos": 18990,
+   "quantidade": 1,
+   "pct_gastos": 0.04438627040798439,
+   "pct_renda": 0.03651923076923077
+  },
+  {
+   "chave": "Lazer",
+   "nome": "Lazer",
+   "marca": null,
+   "categoria": "Lazer",
+   "total_centavos": 17000,
+   "quantidade": 2,
+   "pct_gastos": 0.03973494454637886,
+   "pct_renda": 0.032692307692307694
+  },
+  {
+   "chave": "Outros",
+   "nome": "Outros",
+   "marca": null,
+   "categoria": "Outros",
+   "total_centavos": 16990,
+   "quantidade": 2,
+   "pct_gastos": 0.03971157104958687,
+   "pct_renda": 0.03267307692307692
+  },
+  {
+   "chave": "Assinaturas",
+   "nome": "Assinaturas",
+   "marca": null,
+   "categoria": "Assinaturas",
+   "total_centavos": 10470,
+   "quantidade": 3,
+   "pct_gastos": 0.024472051141210982,
+   "pct_renda": 0.020134615384615386
+  },
+  {
+   "chave": "A classificar",
+   "nome": "A classificar",
+   "marca": null,
+   "categoria": "A classificar",
+   "total_centavos": 7790,
+   "quantidade": 1,
+   "pct_gastos": 0.01820795400095831,
+   "pct_renda": 0.014980769230769232
+  }
+ ],
+ "estabelecimentos": [
+  {
+   "chave": "texto:ALUGUEL APTO 302",
+   "nome": "Aluguel Apto 302",
+   "marca": null,
+   "categoria": "Moradia",
+   "total_centavos": 145000,
+   "quantidade": 1,
+   "pct_gastos": 0.3389157034838197,
+   "pct_renda": 0.27884615384615385
+  },
+  {
+   "chave": "marca:zaffari",
+   "nome": "Zaffari",
+   "marca": "zaffari",
+   "categoria": "Mercado",
+   "total_centavos": 82285,
+   "quantidade": 4,
+   "pct_gastos": 0.1923288183528697,
+   "pct_renda": 0.15824038461538462
+  },
+  {
+   "chave": "marca:ifood",
+   "nome": "iFood",
+   "marca": "ifood",
+   "categoria": "Restaurantes e delivery",
+   "total_centavos": 51400,
+   "quantidade": 9,
+   "pct_gastos": 0.12013977351081609,
+   "pct_renda": 0.09884615384615385
+  },
+  {
+   "chave": "texto:CEEE EQUATORIAL ENERGIA",
+   "nome": "Ceee Equatorial Energia",
+   "marca": null,
+   "categoria": "Moradia",
+   "total_centavos": 18990,
+   "quantidade": 1,
+   "pct_gastos": 0.04438627040798439,
+   "pct_renda": 0.03651923076923077
+  },
+  {
+   "chave": "texto:LOJAS RENNER",
+   "nome": "Lojas Renner",
+   "marca": null,
+   "categoria": "Vestuário",
+   "total_centavos": 18990,
+   "quantidade": 1,
+   "pct_gastos": 0.04438627040798439,
+   "pct_renda": 0.03651923076923077
+  },
+  {
+   "chave": "marca:uber",
+   "nome": "Uber",
+   "marca": "uber",
+   "categoria": "Transporte",
+   "total_centavos": 18090,
+   "quantidade": 7,
+   "pct_gastos": 0.04228265569670551,
+   "pct_renda": 0.03478846153846154
+  },
+  {
+   "chave": "marca:smartfit",
+   "nome": "Smart Fit",
+   "marca": "smartfit",
+   "categoria": "Saúde",
+   "total_centavos": 12990,
+   "quantidade": 1,
+   "pct_gastos": 0.030362172332791846,
+   "pct_renda": 0.02498076923076923
+  },
+  {
+   "chave": "texto:VIVO FIBRA INTERNET",
+   "nome": "Vivo Fibra Internet",
+   "marca": null,
+   "categoria": "Moradia",
+   "total_centavos": 12990,
+   "quantidade": 1,
+   "pct_gastos": 0.030362172332791846,
+   "pct_renda": 0.02498076923076923
+  },
+  {
+   "chave": "texto:BAR OPINIAO",
+   "nome": "Bar Opiniao",
+   "marca": null,
+   "categoria": "Lazer",
+   "total_centavos": 9800,
+   "quantidade": 1,
+   "pct_gastos": 0.022906026856147815,
+   "pct_renda": 0.018846153846153846
+  },
+  {
+   "chave": "marca:amazon",
+   "nome": "Amazon",
+   "marca": "amazon",
+   "categoria": "Outros",
+   "total_centavos": 8990,
+   "quantidade": 1,
+   "pct_gastos": 0.02101277361599682,
+   "pct_renda": 0.017288461538461537
+  },
+  {
+   "chave": "texto:PIX ENVIADO JOAO P",
+   "nome": "Pix Enviado Joao P",
+   "marca": null,
+   "categoria": "Outros",
+   "total_centavos": 8000,
+   "quantidade": 1,
+   "pct_gastos": 0.018698797433590052,
+   "pct_renda": 0.015384615384615385
+  },
+  {
+   "chave": "texto:LOJA XYZ",
+   "nome": "Loja Xyz",
+   "marca": null,
+   "categoria": "A classificar",
+   "total_centavos": 7790,
+   "quantidade": 1,
+   "pct_gastos": 0.01820795400095831,
+   "pct_renda": 0.014980769230769232
+  },
+  {
+   "chave": "marca:cinemark",
+   "nome": "Cinemark",
+   "marca": "cinemark",
+   "categoria": "Lazer",
+   "total_centavos": 7200,
+   "quantidade": 1,
+   "pct_gastos": 0.016828917690231048,
+   "pct_renda": 0.013846153846153847
+  },
+  {
+   "chave": "marca:panvel",
+   "nome": "Panvel",
+   "marca": "panvel",
+   "categoria": "Saúde",
+   "total_centavos": 6780,
+   "quantidade": 1,
+   "pct_gastos": 0.01584723082496757,
+   "pct_renda": 0.013038461538461539
+  },
+  {
+   "chave": "marca:netflix",
+   "nome": "Netflix",
+   "marca": "netflix",
+   "categoria": "Assinaturas",
+   "total_centavos": 5590,
+   "quantidade": 1,
+   "pct_gastos": 0.013065784706721048,
+   "pct_renda": 0.01075
+  },
+  {
+   "chave": "texto:PADARIA PAO QUENTE",
+   "nome": "Padaria Pao Quente",
+   "marca": null,
+   "categoria": "Restaurantes e delivery",
+   "total_centavos": 4150,
+   "quantidade": 2,
+   "pct_gastos": 0.00970000116867484,
+   "pct_renda": 0.00798076923076923
+  },
+  {
+   "chave": "marca:99",
+   "nome": "99",
+   "marca": "99",
+   "categoria": "Transporte",
+   "total_centavos": 3920,
+   "quantidade": 2,
+   "pct_gastos": 0.009162410742459125,
+   "pct_renda": 0.007538461538461538
+  },
+  {
+   "chave": "marca:youtube",
+   "nome": "YouTube Premium",
+   "marca": "youtube",
+   "categoria": "Assinaturas",
+   "total_centavos": 2690,
+   "quantidade": 1,
+   "pct_gastos": 0.006287470637044655,
+   "pct_renda": 0.0051730769230769235
+  },
+  {
+   "chave": "marca:spotify",
+   "nome": "Spotify",
+   "marca": "spotify",
+   "categoria": "Assinaturas",
+   "total_centavos": 2190,
+   "quantidade": 1,
+   "pct_gastos": 0.005118795797445277,
+   "pct_renda": 0.004211538461538462
+  }
+ ],
+ "transacoes": [
+  {
+   "id": 1,
+   "data": "2026-10-30",
+   "descricao": "UBER *TRIP",
+   "valor_centavos": 4120,
+   "categoria": "Transporte",
+   "estabelecimento": "marca:uber",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 2,
+   "data": "2026-10-29",
+   "descricao": "IFD*PIZZARIA NAPOLI",
+   "valor_centavos": 6990,
+   "categoria": "Restaurantes e delivery",
+   "estabelecimento": "marca:ifood",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 3,
+   "data": "2026-10-28",
+   "descricao": "PAG*LOJA XYZ 4481",
+   "valor_centavos": 7790,
+   "categoria": "A classificar",
+   "estabelecimento": "texto:LOJA XYZ",
+   "conta": "Cartão de crédito",
+   "revisar": true,
+   "confianca": null
+  },
+  {
+   "id": 4,
+   "data": "2026-10-27",
+   "descricao": "ZAFFARI IPIRANGA",
+   "valor_centavos": 9870,
+   "categoria": "Mercado",
+   "estabelecimento": "marca:zaffari",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 5,
+   "data": "2026-10-26",
+   "descricao": "AMAZON MARKETPLACE",
+   "valor_centavos": 8990,
+   "categoria": "Outros",
+   "estabelecimento": "marca:amazon",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 6,
+   "data": "2026-10-25",
+   "descricao": "BAR OPINIAO",
+   "valor_centavos": 9800,
+   "categoria": "Lazer",
+   "estabelecimento": "texto:BAR OPINIAO",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 7,
+   "data": "2026-10-25",
+   "descricao": "IFD*SUSHI DA PRACA",
+   "valor_centavos": 5590,
+   "categoria": "Restaurantes e delivery",
+   "estabelecimento": "marca:ifood",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 8,
+   "data": "2026-10-24",
+   "descricao": "UBER *TRIP",
+   "valor_centavos": 2280,
+   "categoria": "Transporte",
+   "estabelecimento": "marca:uber",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 9,
+   "data": "2026-10-23",
+   "descricao": "LOJAS RENNER",
+   "valor_centavos": 18990,
+   "categoria": "Vestuário",
+   "estabelecimento": "texto:LOJAS RENNER",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 10,
+   "data": "2026-10-22",
+   "descricao": "UBER *TRIP",
+   "valor_centavos": 1640,
+   "categoria": "Transporte",
+   "estabelecimento": "marca:uber",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 11,
+   "data": "2026-10-21",
+   "descricao": "IFD*BURGER DO BAIRRO",
+   "valor_centavos": 4800,
+   "categoria": "Restaurantes e delivery",
+   "estabelecimento": "marca:ifood",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 12,
+   "data": "2026-10-20",
+   "descricao": "PAG*PADARIA PAO QUENTE",
+   "valor_centavos": 2300,
+   "categoria": "Restaurantes e delivery",
+   "estabelecimento": "texto:PADARIA PAO QUENTE",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 13,
+   "data": "2026-10-19",
+   "descricao": "99APP *CORRIDA",
+   "valor_centavos": 1780,
+   "categoria": "Transporte",
+   "estabelecimento": "marca:99",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 14,
+   "data": "2026-10-18",
+   "descricao": "IFD*PIZZARIA NAPOLI",
+   "valor_centavos": 6100,
+   "categoria": "Restaurantes e delivery",
+   "estabelecimento": "marca:ifood",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 15,
+   "data": "2026-10-17",
+   "descricao": "UBER *TRIP",
+   "valor_centavos": 3100,
+   "categoria": "Transporte",
+   "estabelecimento": "marca:uber",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 16,
+   "data": "2026-10-16",
+   "descricao": "ZAFFARI CRISTAL",
+   "valor_centavos": 22410,
+   "categoria": "Mercado",
+   "estabelecimento": "marca:zaffari",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 17,
+   "data": "2026-10-15",
+   "descricao": "PANVEL FILIAL 12",
+   "valor_centavos": 6780,
+   "categoria": "Saúde",
+   "estabelecimento": "marca:panvel",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 18,
+   "data": "2026-10-15",
+   "descricao": "PIX ENVIADO JOAO P",
+   "valor_centavos": 8000,
+   "categoria": "Outros",
+   "estabelecimento": "texto:PIX ENVIADO JOAO P",
+   "conta": "Conta corrente",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 19,
+   "data": "2026-10-14",
+   "descricao": "IFD*ACAI TOP",
+   "valor_centavos": 3990,
+   "categoria": "Restaurantes e delivery",
+   "estabelecimento": "marca:ifood",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 20,
+   "data": "2026-10-13",
+   "descricao": "UBER *TRIP",
+   "valor_centavos": 2750,
+   "categoria": "Transporte",
+   "estabelecimento": "marca:uber",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 21,
+   "data": "2026-10-12",
+   "descricao": "GOOGLE YOUTUBEPREMIUM",
+   "valor_centavos": 2690,
+   "categoria": "Assinaturas",
+   "estabelecimento": "marca:youtube",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 22,
+   "data": "2026-10-11",
+   "descricao": "CINEMARK BOURBON IPIRANGA",
+   "valor_centavos": 7200,
+   "categoria": "Lazer",
+   "estabelecimento": "marca:cinemark",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 23,
+   "data": "2026-10-11",
+   "descricao": "IFD*BURGER DO BAIRRO",
+   "valor_centavos": 7200,
+   "categoria": "Restaurantes e delivery",
+   "estabelecimento": "marca:ifood",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 24,
+   "data": "2026-10-10",
+   "descricao": "MP*SMARTFIT",
+   "valor_centavos": 12990,
+   "categoria": "Saúde",
+   "estabelecimento": "marca:smartfit",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 25,
+   "data": "2026-10-10",
+   "descricao": "VIVO FIBRA INTERNET",
+   "valor_centavos": 12990,
+   "categoria": "Moradia",
+   "estabelecimento": "texto:VIVO FIBRA INTERNET",
+   "conta": "Conta corrente",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 26,
+   "data": "2026-10-09",
+   "descricao": "PAG*PADARIA PAO QUENTE",
+   "valor_centavos": 1850,
+   "categoria": "Restaurantes e delivery",
+   "estabelecimento": "texto:PADARIA PAO QUENTE",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 27,
+   "data": "2026-10-09",
+   "descricao": "ZAFFARI BOURBON",
+   "valor_centavos": 18760,
+   "categoria": "Mercado",
+   "estabelecimento": "marca:zaffari",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 28,
+   "data": "2026-10-08",
+   "descricao": "99APP *CORRIDA",
+   "valor_centavos": 2140,
+   "categoria": "Transporte",
+   "estabelecimento": "marca:99",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 29,
+   "data": "2026-10-08",
+   "descricao": "CEEE EQUATORIAL ENERGIA",
+   "valor_centavos": 18990,
+   "categoria": "Moradia",
+   "estabelecimento": "texto:CEEE EQUATORIAL ENERGIA",
+   "conta": "Conta corrente",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 30,
+   "data": "2026-10-07",
+   "descricao": "IFD*SUSHI DA PRACA",
+   "valor_centavos": 5250,
+   "categoria": "Restaurantes e delivery",
+   "estabelecimento": "marca:ifood",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 31,
+   "data": "2026-10-06",
+   "descricao": "UBER *TRIP",
+   "valor_centavos": 1890,
+   "categoria": "Transporte",
+   "estabelecimento": "marca:uber",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 32,
+   "data": "2026-10-06",
+   "descricao": "ALUGUEL APTO 302",
+   "valor_centavos": 145000,
+   "categoria": "Moradia",
+   "estabelecimento": "texto:ALUGUEL APTO 302",
+   "conta": "Conta corrente",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 33,
+   "data": "2026-10-05",
+   "descricao": "SPOTIFY P1A2B3",
+   "valor_centavos": 2190,
+   "categoria": "Assinaturas",
+   "estabelecimento": "marca:spotify",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 34,
+   "data": "2026-10-05",
+   "descricao": "NETFLIX.COM",
+   "valor_centavos": 5590,
+   "categoria": "Assinaturas",
+   "estabelecimento": "marca:netflix",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 35,
+   "data": "2026-10-04",
+   "descricao": "IFD*PIZZARIA NAPOLI",
+   "valor_centavos": 6890,
+   "categoria": "Restaurantes e delivery",
+   "estabelecimento": "marca:ifood",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 36,
+   "data": "2026-10-03",
+   "descricao": "IFD*BURGER DO BAIRRO",
+   "valor_centavos": 4590,
+   "categoria": "Restaurantes e delivery",
+   "estabelecimento": "marca:ifood",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 37,
+   "data": "2026-10-02",
+   "descricao": "ZAFFARI CRISTAL",
+   "valor_centavos": 31245,
+   "categoria": "Mercado",
+   "estabelecimento": "marca:zaffari",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  },
+  {
+   "id": 38,
+   "data": "2026-10-01",
+   "descricao": "UBER *TRIP",
+   "valor_centavos": 2310,
+   "categoria": "Transporte",
+   "estabelecimento": "marca:uber",
+   "conta": "Cartão de crédito",
+   "revisar": false,
+   "confianca": null
+  }
+ ],
+ "avisos": [
+  {
+   "tipo": "sem_categoria",
+   "nivel": "atencao",
+   "texto": "R$ 77,90 em 1 gasto ainda sem categoria. Eles entram no total e aparecem como “A classificar” até você revisar."
+  },
+  {
+   "tipo": "transferencias",
+   "nivel": "info",
+   "texto": "Transferências entre suas contas (R$ 2.300,00 saindo e R$ 2.300,00 entrando) ficaram fora dos gastos."
+  }
+ ],
+ "recomendacoes": [
+  {
+   "id": "app_delivery:marca:ifood",
+   "tipo": "app_delivery",
+   "alvo_tipo": "estabelecimento",
+   "alvo_chave": "marca:ifood",
+   "alvo_nome": "iFood",
+   "titulo": "9 pedidos no iFood",
+   "fato": "Foram 9 pedidos no iFood neste mês, com ticket médio de R$ 57,11, somando R$ 514,00.",
+   "consequencia": "É o equivalente a 3 dias da sua renda do mês.",
+   "acao": "Trocar 4 desses pedidos por comida feita em casa ou marmita. Isso liberaria cerca de R$ 228,44 por mês.",
+   "reducao": 0.4444444444444444,
+   "economia_centavos": 22844,
+   "base": "mes_completo",
+   "calculo": "44,4% de R$ 514,00 gastos no mês = R$ 228,44 por mês.",
+   "capi": "O motoboy já sabe até o nome da capivara."
+  },
+  {
+   "id": "app_transporte:marca:uber",
+   "tipo": "app_transporte",
+   "alvo_tipo": "estabelecimento",
+   "alvo_chave": "marca:uber",
+   "alvo_nome": "Uber",
+   "titulo": "7 corridas de Uber",
+   "fato": "Foram 7 corridas de Uber neste mês, somando R$ 180,90 (3,5% da sua renda).",
+   "consequencia": "É o equivalente a 1 dia da sua renda do mês.",
+   "acao": "Trocar 3 em cada 10 corridas por ônibus, carona ou caminhada nos trajetos curtos. Isso liberaria cerca de R$ 54,27 por mês.",
+   "reducao": 0.3,
+   "economia_centavos": 5427,
+   "base": "mes_completo",
+   "calculo": "30% de R$ 180,90 gastos no mês = R$ 54,27 por mês.",
+   "capi": "O motorista já sabe teu endereço de cor. Bah, eu também."
+  },
+  {
+   "id": "assinaturas:Assinaturas",
+   "tipo": "assinaturas",
+   "alvo_tipo": "categoria",
+   "alvo_chave": "Assinaturas",
+   "alvo_nome": "Assinaturas",
+   "titulo": "3 cobranças de assinatura",
+   "fato": "Apareceram 3 cobranças de assinatura neste mês, somando R$ 104,70. A menor foi de R$ 21,90.",
+   "consequencia": "É o equivalente a 1 dia da sua renda do mês.",
+   "acao": "Abrir cada uma e conferir quando foi o último uso; se alguma estiver parada, cancelar a menor já faz diferença. Isso liberaria cerca de R$ 21,90 por mês.",
+   "reducao": 0.20916905444126074,
+   "economia_centavos": 2190,
+   "base": "mes_completo",
+   "calculo": "20,9% de R$ 104,70 gastos no mês = R$ 21,90 por mês.",
+   "capi": "Assinatura é que nem minuano: tu nem vê chegar, mas sente."
+  }
+ ],
+ "economia_combinada_centavos": 30461
+}
