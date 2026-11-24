@@ -2,7 +2,7 @@ import asyncio
 import json
 from types import SimpleNamespace
 
-from nota_a_nota.llm.chat import MensagemChat, conversar, ferramentas_do_mcp
+from nota_a_nota.llm.chat import MensagemChat, conversar, em_reais, ferramentas_do_mcp
 
 
 def _uso():
@@ -116,3 +116,19 @@ def test_recusa_encerra_com_mensagem():
     eventos = _coletar(cliente)
 
     assert [e["tipo"] for e in eventos] == ["erro", "fim"]
+
+
+def test_valores_chegam_ao_modelo_em_reais():
+    entrada = {
+        "result": [{"conta": "Cartão", "saldo_centavos": -71494}],
+        "teto_centavos": None,
+        "pode_gastar_centavos": 275545,
+        "dias_restantes": 7,
+    }
+
+    assert em_reais(entrada) == {
+        "result": [{"conta": "Cartão", "saldo": "-R$ 714,94"}],
+        "teto": None,
+        "pode_gastar": "R$ 2.755,45",
+        "dias_restantes": 7,
+    }
