@@ -52,7 +52,7 @@ if ($Servicos -contains "api") {
     --set-cloudsql-instances=$Conexao `
     --set-secrets="DATABASE_URL=database-url:latest" `
     --command=alembic `
-    --args=upgrade,head `
+    "--args=upgrade,head" `
     --max-retries=0 `
     --task-timeout=10m `
     --execute-now `
@@ -93,6 +93,7 @@ if ($Servicos -contains "web") {
     $mapa.GOOGLE_CLIENT_ID = "google-client-id"
     $mapa.GOOGLE_CLIENT_SECRET = "google-client-secret"
   }
+  $segredos = Get-Segredos $mapa
   $variaveis = "BETTER_AUTH_URL=$urlWeb,NOTA_API_URL=$urlApi,AUTH_AUDIENCE=$Audiencia,AUTH_TRUSTED_PROXIES=169.254.0.0/16"
   if ($Remetente) { $variaveis = "^|^$($variaveis.Replace(',', '|'))|EMAIL_REMETENTE=$Remetente" }
   Invoke-Gcloud run deploy capi-web `
@@ -100,7 +101,7 @@ if ($Servicos -contains "web") {
     --region=$Regiao `
     --service-account=$ContaDeServico `
     --add-cloudsql-instances=$Conexao `
-    --update-secrets=(Get-Segredos $mapa) `
+    --update-secrets=$segredos `
     --update-env-vars=$variaveis `
     --allow-unauthenticated `
     --cpu=1 `
