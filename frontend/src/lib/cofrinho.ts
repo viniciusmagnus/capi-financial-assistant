@@ -62,7 +62,7 @@ export const CATEGORIAS_PADRAO: Categorias = {
 
 export const todasAsCategorias = (c: Categorias) => [...c.despesa, ...c.receita, c.transferencia];
 
-export type Regra = { id: number; padrao: string; categoria: Categoria };
+export type Regra = { id: number; padrao: string; categoria: Categoria | null; estabelecimento?: string | null };
 
 export type ResultadoCategorizacao = {
   por_regra: number;

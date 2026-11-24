@@ -100,7 +100,42 @@ def test_regra_rejeita_padrao_curto_e_categoria_inventada(session):
     with pytest.raises(regras.RegraInvalida, match="3 letras"):
         regras.salvar(session, " a ", "Mercado")
     with pytest.raises(regras.RegraInvalida, match="categoria"):
-        regras.salvar(session, "LOJA", "Bitcoin")
+        regras.salvar(session, "PADARIA BELLA", "Bitcoin")
+
+
+def test_regra_generica_de_pagamento_e_recusada(session):
+    for padrao in ("PIX ENVIADO", "COMPRA CARTAO", "PARCELA 1/6", "TED 123456", "LOJA"):
+        with pytest.raises(regras.RegraInvalida, match="genérico"):
+            regras.salvar(session, padrao, "Outros")
+    assert regras.salvar(session, "PIX ENVIADO JOAQUIM", "Outros").padrao == "PIX ENVIADO JOAQUIM"
+    assert regras.salvar(session, "99APP", "Transporte").padrao == "99APP"
+
+
+def test_regra_so_de_estabelecimento_nomeia_sem_categorizar(session):
+    regra = regras.salvar(session, "amazon", None, "Amazon")
+    assert regra.categoria is None and regra.estabelecimento == "Amazon"
+    with pytest.raises(regras.RegraInvalida, match="categoria, um estabelecimento"):
+        regras.salvar(session, "AMAZON", None, "  ")
+    assert regras.escolher([regra], "AMAZONMKTPLC*RCHSPORTS - Parcela 1/6") is None
+    assert regras.escolher_estabelecimento([regra], "AMAZONMKTPLC*RCHSPORTS - Parcela 1/6") == regra
+
+
+def test_regra_editada_e_padrao_repetido(session):
+    primeira = regras.salvar(session, "LORDS ZS", "Vestuário")
+    segunda = regras.salvar(session, "GIANLUCA", "Restaurantes e delivery")
+    editada = regras.editar(session, primeira.id, "lords zs", "Vestuário", "Lords ZS")
+    assert editada.estabelecimento == "Lords ZS"
+    with pytest.raises(regras.RegraInvalida, match="já existe"):
+        regras.editar(session, segunda.id, "LORDS ZS", "Vestuário", None)
+    assert regras.editar(session, 999_999, "XPTO LOJA", "Outros", None) is None
+
+
+def test_regra_padrao_antiga_pode_trocar_so_a_categoria(session):
+    padrao = regras.obter_por_padrao(session, "PAGAMENTO RECEBIDO")
+    editada = regras.editar(session, padrao.id, "pagamento recebido", "Outras receitas", None)
+    assert editada.categoria == "Outras receitas"
+    with pytest.raises(regras.RegraInvalida, match="genérico"):
+        regras.editar(session, padrao.id, "PAGAMENTO ENVIADO", "Outras receitas", None)
 
 
 def test_migracao_traz_regras_iniciais(session):

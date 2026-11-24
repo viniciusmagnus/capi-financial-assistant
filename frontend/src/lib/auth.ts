@@ -22,7 +22,7 @@ export const TAMANHO_MINIMO_DA_SENHA = 12;
 export const TAMANHO_MAXIMO_DA_SENHA = 256;
 
 const globais = globalThis as unknown as { poolDaAutenticacao?: Pool };
-const pool = (globais.poolDaAutenticacao ??= new Pool({ connectionString: process.env.DATABASE_URL, max: 5 }));
+const pool = (globais.poolDaAutenticacao ??= new Pool({ connectionString: process.env.DATABASE_URL, max: 3, idleTimeoutMillis: 10_000 }));
 
 function lista(valor: string | undefined) {
   return (valor ?? "")

@@ -1,9 +1,9 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Pencil, X } from "lucide-react";
 import { useState, useTransition } from "react";
 
-import { apagarRegra, categorizarPendentes, criarCategoria, salvarRegra } from "@/app/acoes";
+import { apagarRegra, categorizarPendentes, criarCategoria, editarRegra, salvarRegra } from "@/app/acoes";
 import { OpcoesDeCategoria } from "@/components/OpcoesDeCategoria";
 import type { Categoria, Categorias, Regra, ResultadoCategorizacao, Sentido } from "@/lib/cofrinho";
 
@@ -16,6 +16,57 @@ function resumo(r: ResultadoCategorizacao) {
   if (r.enviadas_ao_claude > 0) partes.push(`${r.pelo_claude} pelo Claude`);
   partes.push(r.pendentes === 0 ? "nada pendente" : `${r.pendentes} ainda sem categoria`);
   return partes.join(" · ");
+}
+
+function EdicaoDeRegra({
+  regra,
+  categorias,
+  aoSalvar,
+  aoCancelar,
+}: {
+  regra: Regra;
+  categorias: Categorias;
+  aoSalvar: (padrao: string, categoria: Categoria | null, estabelecimento: string | null) => void;
+  aoCancelar: () => void;
+}) {
+  const [padrao, setPadrao] = useState(regra.padrao);
+  const [categoria, setCategoria] = useState(regra.categoria ?? "");
+  const [estabelecimento, setEstabelecimento] = useState(regra.estabelecimento ?? "");
+  const vazia = !categoria && !estabelecimento.trim();
+  return (
+    <form
+      className="grid gap-2 sm:grid-cols-3"
+      aria-label={`Editar a regra ${regra.padrao}`}
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (normalizar(padrao).length >= 3 && !vazia) aoSalvar(padrao, categoria || null, estabelecimento.trim() || null);
+      }}
+    >
+      <label className="block">
+        <span className="text-xs text-suave">Padrão</span>
+        <input value={padrao} onChange={(e) => setPadrao(e.target.value)} maxLength={120} className="mt-0.5 w-full rounded-lg border border-borda bg-fundo px-2 py-1.5 uppercase" />
+      </label>
+      <label className="block">
+        <span className="text-xs text-suave">Categoria</span>
+        <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className="mt-0.5 w-full rounded-lg border border-borda bg-fundo px-2 py-1.5">
+          <option value="">Não muda a categoria</option>
+          <OpcoesDeCategoria categorias={categorias} />
+        </select>
+      </label>
+      <label className="block">
+        <span className="text-xs text-suave">Estabelecimento</span>
+        <input value={estabelecimento} onChange={(e) => setEstabelecimento(e.target.value)} maxLength={80} className="mt-0.5 w-full rounded-lg border border-borda bg-fundo px-2 py-1.5" />
+      </label>
+      <div className="flex gap-2 sm:col-span-3">
+        <button type="submit" disabled={vazia || normalizar(padrao).length < 3} className="rounded-lg bg-destaque px-3 py-1.5 font-semibold text-sobre-destaque disabled:opacity-40">
+          Salvar
+        </button>
+        <button type="button" onClick={aoCancelar} className="rounded-lg border border-borda px-3 py-1.5">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  );
 }
 
 function NovaCategoria({
@@ -102,6 +153,7 @@ export function Regras({ iniciais, categorias: categoriasIniciais, modoDemo }: {
   const [categoria, setCategoria] = useState<Categoria>(categoriasIniciais.despesa[0] ?? "Outros");
   const [pendente, iniciar] = useTransition();
   const [aviso, setAviso] = useState<string | null>(null);
+  const [editando, setEditando] = useState<number | null>(null);
 
   function executar(acao: () => Promise<string | void>) {
     setAviso(null);
@@ -122,7 +174,8 @@ export function Regras({ iniciais, categorias: categoriasIniciais, modoDemo }: {
       if (modoDemo) {
         setDemo((atual) => [...atual.filter((r) => r.padrao !== limpo), { id: Date.now(), padrao: limpo, categoria }].sort((a, b) => a.padrao.localeCompare(b.padrao)));
       } else {
-        await salvarRegra(limpo, categoria);
+        const r = await salvarRegra(limpo, categoria);
+        if (!r.ok) return r.erro.charAt(0).toUpperCase() + r.erro.slice(1) + ".";
       }
       setPadrao("");
     });
@@ -232,23 +285,58 @@ export function Regras({ iniciais, categorias: categoriasIniciais, modoDemo }: {
       </div>
 
       <ul className="mt-6 divide-y divide-borda rounded-2xl border border-borda bg-superficie px-4">
-        {lista.map((r) => (
-          <li key={r.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-            <div className="min-w-0">
-              <p className="truncate text-xs font-semibold tracking-wide">{r.padrao}</p>
-              <p className="text-suave">{r.categoria}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => remover(r.id)}
-              disabled={pendente}
-              aria-label={`Apagar a regra ${r.padrao}`}
-              className="shrink-0 rounded-lg p-1.5 text-suave hover:bg-elevada hover:text-texto"
-            >
-              <X className="size-4" aria-hidden />
-            </button>
-          </li>
-        ))}
+        {lista.map((r) =>
+          editando === r.id ? (
+            <li key={r.id} className="py-2.5 text-sm">
+              <EdicaoDeRegra
+                regra={r}
+                categorias={categorias}
+                aoCancelar={() => setEditando(null)}
+                aoSalvar={(padraoNovo, categoriaNova, estabelecimento) =>
+                  executar(async () => {
+                    if (modoDemo) {
+                      setDemo((atual) => atual.map((x) => (x.id === r.id ? { ...x, padrao: normalizar(padraoNovo), categoria: categoriaNova, estabelecimento } : x)));
+                    } else {
+                      const resultado = await editarRegra(r.id, padraoNovo, categoriaNova, estabelecimento);
+                      if (!resultado.ok) return resultado.erro.charAt(0).toUpperCase() + resultado.erro.slice(1) + ".";
+                    }
+                    setEditando(null);
+                  })
+                }
+              />
+            </li>
+          ) : (
+            <li key={r.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+              <div className="min-w-0">
+                <p className="truncate text-xs font-semibold tracking-wide">{r.padrao}</p>
+                <p className="text-suave">
+                  {r.categoria ?? "não muda a categoria"}
+                  {r.estabelecimento ? ` · estabelecimento ${r.estabelecimento}` : ""}
+                </p>
+              </div>
+              <span className="flex shrink-0 gap-1">
+                <button
+                  type="button"
+                  onClick={() => setEditando(r.id)}
+                  disabled={pendente}
+                  aria-label={`Editar a regra ${r.padrao}`}
+                  className="rounded-lg p-1.5 text-suave hover:bg-elevada hover:text-texto"
+                >
+                  <Pencil className="size-4" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remover(r.id)}
+                  disabled={pendente}
+                  aria-label={`Apagar a regra ${r.padrao}`}
+                  className="rounded-lg p-1.5 text-suave hover:bg-elevada hover:text-texto"
+                >
+                  <X className="size-4" aria-hidden />
+                </button>
+              </span>
+            </li>
+          ),
+        )}
         {lista.length === 0 && <li className="py-4 text-sm text-suave">Nenhuma regra ainda: tudo vai para o Claude.</li>}
       </ul>
     </main>

@@ -30,6 +30,7 @@ from nota_a_nota import (
     estabelecimentos,
     perfil,
     regras,
+    revisao,
 )
 from nota_a_nota import categorias as catalogo
 from nota_a_nota.acesso import abrir_sessao, dono, usuario_atual
@@ -43,12 +44,14 @@ from nota_a_nota.ledger import (
     criar_contas_padrao,
     importar_extrato,
 )
+from nota_a_nota.llm import revisor
 from nota_a_nota.llm.capi_diagnostico import comentar
 from nota_a_nota.llm.capivara import Fala, fala_imediata, falar
 from nota_a_nota.llm.categorizar import CategorizacaoRecusada, categorizar
 from nota_a_nota.llm.chat import MensagemChat, conversar
 from nota_a_nota.mcp_server import mcp
-from nota_a_nota.models import Conta, OrigemCategoria, Transacao
+from nota_a_nota.models import Conta, ConversaRevisao, OrigemCategoria, Transacao
+from nota_a_nota.pesquisa_web import obter_pesquisador
 from nota_a_nota.rag import atualizar_indice
 from nota_a_nota.rag.busca import (
     ResultadoIndexacao,
@@ -396,15 +399,19 @@ def corrigir_categoria(
         descricao = session.get(Transacao, transacao_id).descricao
         padrao = estabelecimentos.identificar(descricao).regra
         if padrao:
-            regra = regras.salvar(session, padrao, corpo.categoria)
-            outras = regras.aplicar(session)
+            try:
+                regra = regras.salvar(session, padrao, corpo.categoria)
+                outras = regras.aplicar(session)
+            except regras.RegraInvalida:
+                regra = None
     atualizar_indice(session)
     return ResultadoCorrecao(categoria=corpo.categoria, regra=regra, outras_categorizadas=outras)
 
 
 class EntradaRegra(BaseModel):
     padrao: str = Field(min_length=3, max_length=120)
-    categoria: str = Field(max_length=80)
+    categoria: str | None = Field(None, max_length=80)
+    estabelecimento: str | None = Field(None, max_length=80)
 
 
 @api.get("/regras")
@@ -415,9 +422,22 @@ def listar_regras(session: SessaoDb) -> list[regras.Regra]:
 @api.post("/regras", status_code=201)
 def salvar_regra(session: SessaoDb, corpo: EntradaRegra) -> regras.Regra:
     try:
-        return regras.salvar(session, corpo.padrao, corpo.categoria)
+        return regras.salvar(session, corpo.padrao, corpo.categoria, corpo.estabelecimento)
     except regras.RegraInvalida as erro:
         raise HTTPException(422, str(erro)) from erro
+
+
+@api.patch("/regras/{regra_id}")
+def editar_regra(session: SessaoDb, regra_id: int, corpo: EntradaRegra) -> regras.Regra:
+    try:
+        regra = regras.editar(
+            session, regra_id, corpo.padrao, corpo.categoria, corpo.estabelecimento
+        )
+    except regras.RegraInvalida as erro:
+        raise HTTPException(422, str(erro)) from erro
+    if regra is None:
+        raise HTTPException(404, "regra não encontrada")
+    return regra
 
 
 @api.delete("/regras/{regra_id}", status_code=204)
@@ -525,6 +545,186 @@ def criar_token_mcp(session: SessaoDb, corpo: EntradaTokenMcp) -> autenticacao.T
 def revogar_token_mcp(session: SessaoDb, token_id: int) -> None:
     if not autenticacao.revogar_token_mcp(session, dono(session), token_id):
         raise HTTPException(404, "token não encontrado")
+
+
+def filtro_da_revisao(
+    categoria: Annotated[str, Query(max_length=80)] = revisao.CATEGORIA_PADRAO,
+    q: Annotated[str | None, Query(max_length=100)] = None,
+    inicio: date | None = None,
+    fim: date | None = None,
+    conta_id: int | None = None,
+) -> revisao.FiltroRevisao:
+    return revisao.FiltroRevisao(
+        categoria=categoria, q=q, inicio=inicio, fim=fim, conta_id=conta_id
+    )
+
+
+FiltroDaRevisao = Annotated[revisao.FiltroRevisao, Depends(filtro_da_revisao)]
+
+
+def _erro_da_revisao(erro: Exception) -> HTTPException:
+    if isinstance(erro, revisao.PreviaDesatualizada):
+        return HTTPException(409, str(erro))
+    if isinstance(erro, revisao.NaoEncontradas | LookupError):
+        return HTTPException(404, str(erro))
+    return HTTPException(422, str(erro))
+
+
+ERROS_DA_REVISAO = (
+    revisao.NaoEncontradas,
+    revisao.RevisaoInvalida,
+    revisao.PreviaDesatualizada,
+    regras.RegraInvalida,
+    LookupError,
+)
+
+
+class IdsDoFiltro(BaseModel):
+    ids: list[int]
+
+
+@api.get("/revisao/transacoes")
+def revisao_transacoes(
+    session: SessaoDb,
+    filtro: FiltroDaRevisao,
+    pagina: Annotated[int, Query(ge=1)] = 1,
+    por_pagina: Annotated[int, Query(ge=1, le=revisao.POR_PAGINA_MAXIMO)] = 50,
+) -> revisao.PaginaRevisao:
+    return revisao.listar(session, filtro, pagina, por_pagina)
+
+
+@api.get("/revisao/grupos")
+def revisao_grupos(session: SessaoDb, filtro: FiltroDaRevisao) -> list[revisao.GrupoRevisao]:
+    return revisao.agrupar(session, filtro)
+
+
+@api.get("/revisao/ids")
+def revisao_ids(session: SessaoDb, filtro: FiltroDaRevisao) -> IdsDoFiltro:
+    try:
+        return IdsDoFiltro(ids=revisao.ids_do_filtro(session, filtro))
+    except revisao.RevisaoInvalida as erro:
+        raise HTTPException(422, str(erro)) from erro
+
+
+@api.get("/revisao/contas")
+def revisao_contas(session: SessaoDb) -> list[revisao.ContaDeOrigem]:
+    return revisao.contas_de_origem(session)
+
+
+class EntradaItens(BaseModel):
+    ids: list[int] = Field(min_length=1, max_length=revisor.LIMITE_SELECAO_CONVERSA)
+
+
+@api.post("/revisao/itens")
+def revisao_itens(session: SessaoDb, corpo: EntradaItens) -> list[revisao.ItemRevisao]:
+    try:
+        return revisao.itens(session, corpo.ids)
+    except revisao.NaoEncontradas as erro:
+        raise HTTPException(404, str(erro)) from erro
+
+
+class ConversaCriada(BaseModel):
+    id: int
+    pesquisa_disponivel: bool
+    ia_disponivel: bool
+
+
+@api.post("/revisao/conversas", status_code=201)
+def abrir_conversa(session: SessaoDb) -> ConversaCriada:
+    conversa = revisor.abrir(session)
+    return ConversaCriada(
+        id=conversa.id,
+        pesquisa_disponivel=obter_pesquisador() is not None,
+        ia_disponivel=bool(get_settings().anthropic_api_key),
+    )
+
+
+@api.get("/revisao/conversas/{conversa_id}")
+def ver_conversa(session: SessaoDb, conversa_id: int) -> revisor.ConversaCompleta:
+    conversa = revisor.carregar(session, conversa_id)
+    if conversa is None:
+        raise HTTPException(404, "conversa não encontrada")
+    return conversa
+
+
+class EntradaMensagemRevisao(BaseModel):
+    texto: str = Field(min_length=1, max_length=2000)
+    transacao_ids: list[int] = Field(min_length=1, max_length=revisor.LIMITE_SELECAO_CONVERSA)
+
+
+@api.post("/revisao/conversas/{conversa_id}/mensagens")
+def mensagem_da_revisao(
+    session: SessaoDb, conversa_id: int, corpo: EntradaMensagemRevisao
+) -> revisor.RespostaRevisao:
+    conversa = session.scalar(select(ConversaRevisao).where(ConversaRevisao.id == conversa_id))
+    if conversa is None:
+        raise HTTPException(404, "conversa não encontrada")
+    try:
+        return revisor.conversar(
+            session, conversa, corpo.texto.strip(), corpo.transacao_ids, obter_pesquisador()
+        )
+    except ERROS_DA_REVISAO as erro:
+        raise _erro_da_revisao(erro) from erro
+    except anthropic.APIError as erro:
+        raise HTTPException(503, f"o Claude não respondeu agora ({type(erro).__name__})") from erro
+
+
+class EntradaPrevia(BaseModel):
+    conteudo: revisao.ConteudoProposta
+    opcoes: revisao.OpcoesAplicacao = revisao.OpcoesAplicacao()
+
+
+class EntradaAplicacao(EntradaPrevia):
+    assinatura: str = Field(pattern=r"^[0-9a-f]{64}$")
+    chave_idempotencia: str = Field(pattern=r"^[A-Za-z0-9_-]{8,64}$")
+    proposta_id: int | None = None
+
+
+@api.post("/revisao/previa")
+def previa_da_revisao(session: SessaoDb, corpo: EntradaPrevia) -> revisao.Previa:
+    try:
+        return revisao.calcular_previa(session, corpo.conteudo, corpo.opcoes)
+    except ERROS_DA_REVISAO as erro:
+        raise _erro_da_revisao(erro) from erro
+
+
+@api.post("/revisao/aplicar")
+def aplicar_revisao(session: SessaoDb, corpo: EntradaAplicacao) -> revisao.ResultadoLote:
+    try:
+        resultado = revisao.aplicar(
+            session,
+            corpo.conteudo,
+            corpo.opcoes,
+            corpo.assinatura,
+            corpo.chave_idempotencia,
+            corpo.proposta_id,
+        )
+    except ERROS_DA_REVISAO as erro:
+        session.rollback()
+        raise _erro_da_revisao(erro) from erro
+    atualizar_indice(session)
+    return resultado
+
+
+@api.post("/revisao/propostas/{proposta_id}/rejeitar", status_code=204)
+def rejeitar_proposta(session: SessaoDb, proposta_id: int) -> None:
+    if not revisao.rejeitar(session, proposta_id):
+        raise HTTPException(404, "proposta não encontrada")
+
+
+@api.get("/revisao/lotes")
+def lotes_da_revisao(session: SessaoDb) -> list[revisao.LoteResumo]:
+    return revisao.historico(session)
+
+
+@api.post("/revisao/lotes/{lote_id}/desfazer")
+def desfazer_lote(session: SessaoDb, lote_id: int) -> revisao.ResultadoDesfazer:
+    try:
+        resultado = revisao.desfazer(session, lote_id)
+    except LookupError as erro:
+        raise HTTPException(404, str(erro)) from erro
+    atualizar_indice(session)
+    return resultado
 
 
 app.include_router(api)

@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     modelo_analise: str = "claude-haiku-5-5"
     modelo_embedding: str = "voyage-4-lite"
     esforco_chat: str = "low"
+    db_pool_size: int = 2
+    db_max_overflow: int = 3
+    pesquisa_web: str = ""
+    pesquisa_web_max_por_mensagem: int = 3
 
     @field_validator("database_url")
     @classmethod

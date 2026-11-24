@@ -8,6 +8,21 @@ import { auth, autenticacaoConfigurada } from "@/lib/auth";
 import type { Categoria, Categorias, Cofrinho, Fala, Regra, ResultadoCategorizacao, Sentido, TokenMcp, TokenMcpCriado, TransacaoEncontrada } from "./cofrinho";
 import { paginaDeEntrada } from "./destino";
 import type { Diagnostico, Renda, ResultadoImportacao } from "./diagnostico";
+import type {
+  ContaDeOrigem,
+  ConteudoProposta,
+  ConversaCriada,
+  FiltroRevisao,
+  GrupoRevisao,
+  ItemRevisao,
+  LoteResumo,
+  OpcoesAplicacao,
+  PaginaRevisao,
+  Previa,
+  RespostaRevisao,
+  ResultadoDesfazer,
+  ResultadoLote,
+} from "./revisao";
 
 const API_URL = process.env.NOTA_API_URL?.replace(/\/$/, "");
 
@@ -113,8 +128,87 @@ export async function buscarRegras(): Promise<Regra[]> {
   return (await chamar("/api/regras")).json();
 }
 
-export async function enviarRegra(padrao: string, categoria: Categoria) {
-  await chamar("/api/regras", { method: "POST", body: JSON.stringify({ padrao, categoria }) });
+export async function enviarRegra(padrao: string, categoria: Categoria | null, estabelecimento: string | null = null) {
+  await chamar("/api/regras", { method: "POST", body: JSON.stringify({ padrao, categoria, estabelecimento }) });
+}
+
+export async function enviarEdicaoDeRegra(id: number, padrao: string, categoria: Categoria | null, estabelecimento: string | null): Promise<Regra> {
+  return (await chamar(`/api/regras/${id}`, { method: "PATCH", body: JSON.stringify({ padrao, categoria, estabelecimento }) })).json();
+}
+
+function consultaDoFiltro(filtro: FiltroRevisao, extra: Record<string, string | number> = {}) {
+  const parametros = new URLSearchParams();
+  if (filtro.q) parametros.set("q", filtro.q);
+  if (filtro.inicio) parametros.set("inicio", filtro.inicio);
+  if (filtro.fim) parametros.set("fim", filtro.fim);
+  if (filtro.conta_id) parametros.set("conta_id", String(filtro.conta_id));
+  for (const [chave, valor] of Object.entries(extra)) parametros.set(chave, String(valor));
+  const texto = parametros.toString();
+  return texto ? `?${texto}` : "";
+}
+
+export async function buscarRevisao(filtro: FiltroRevisao, pagina = 1, porPagina = 50): Promise<PaginaRevisao> {
+  return (await chamar(`/api/revisao/transacoes${consultaDoFiltro(filtro, { pagina, por_pagina: porPagina })}`)).json();
+}
+
+export async function buscarGruposDaRevisao(filtro: FiltroRevisao): Promise<GrupoRevisao[]> {
+  return (await chamar(`/api/revisao/grupos${consultaDoFiltro(filtro)}`)).json();
+}
+
+export async function buscarIdsDaRevisao(filtro: FiltroRevisao): Promise<number[]> {
+  return ((await (await chamar(`/api/revisao/ids${consultaDoFiltro(filtro)}`)).json()) as { ids: number[] }).ids;
+}
+
+export async function buscarItensDaRevisao(ids: number[]): Promise<ItemRevisao[]> {
+  return (await chamar("/api/revisao/itens", { method: "POST", body: JSON.stringify({ ids }) })).json();
+}
+
+export async function buscarContasDaRevisao(): Promise<ContaDeOrigem[]> {
+  return (await chamar("/api/revisao/contas")).json();
+}
+
+export async function criarConversaDeRevisao(): Promise<ConversaCriada> {
+  return (await chamar("/api/revisao/conversas", { method: "POST" })).json();
+}
+
+export async function enviarMensagemDeRevisao(conversaId: number, texto: string, transacaoIds: number[]): Promise<RespostaRevisao> {
+  return (
+    await chamar(`/api/revisao/conversas/${conversaId}/mensagens`, {
+      method: "POST",
+      body: JSON.stringify({ texto, transacao_ids: transacaoIds }),
+    })
+  ).json();
+}
+
+export async function pedirPreviaDaRevisao(conteudo: ConteudoProposta, opcoes: OpcoesAplicacao): Promise<Previa> {
+  return (await chamar("/api/revisao/previa", { method: "POST", body: JSON.stringify({ conteudo, opcoes }) })).json();
+}
+
+export async function enviarAplicacaoDaRevisao(
+  conteudo: ConteudoProposta,
+  opcoes: OpcoesAplicacao,
+  assinatura: string,
+  chaveIdempotencia: string,
+  propostaId: number | null,
+): Promise<ResultadoLote> {
+  return (
+    await chamar("/api/revisao/aplicar", {
+      method: "POST",
+      body: JSON.stringify({ conteudo, opcoes, assinatura, chave_idempotencia: chaveIdempotencia, proposta_id: propostaId }),
+    })
+  ).json();
+}
+
+export async function enviarRejeicaoDeProposta(id: number) {
+  await chamar(`/api/revisao/propostas/${id}/rejeitar`, { method: "POST" });
+}
+
+export async function buscarLotesDaRevisao(): Promise<LoteResumo[]> {
+  return (await chamar("/api/revisao/lotes")).json();
+}
+
+export async function enviarDesfazerLote(id: number): Promise<ResultadoDesfazer> {
+  return (await chamar(`/api/revisao/lotes/${id}/desfazer`, { method: "POST" })).json();
 }
 
 export async function removerRegra(id: number) {

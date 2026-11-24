@@ -8,7 +8,9 @@ param(
   [ValidateSet("cloudbuild", "docker")]
   [string]$Construtor = "cloudbuild",
   [string]$Versao = (Get-Date -Format "yyyyMMdd-HHmmss"),
-  [string]$Remetente
+  [string]$Remetente,
+  [ValidateSet("anthropic", "desligada")]
+  [string]$PesquisaWeb = "anthropic"
 )
 
 . (Join-Path $PSScriptRoot "comum.ps1") -Projeto $Projeto -Regiao $Regiao -Configuracao $Configuracao
@@ -70,7 +72,7 @@ if ($Servicos -contains "api") {
     --service-account=$ContaDeServico `
     --add-cloudsql-instances=$Conexao `
     --update-secrets=$segredos `
-    --update-env-vars="AUTH_JWKS_URL=$urlWeb/api/auth/jwks,AUTH_ISSUER=$urlWeb,AUTH_AUDIENCE=$Audiencia" `
+    --update-env-vars="AUTH_JWKS_URL=$urlWeb/api/auth/jwks,AUTH_ISSUER=$urlWeb,AUTH_AUDIENCE=$Audiencia,PESQUISA_WEB=$PesquisaWeb" `
     --allow-unauthenticated `
     --cpu=1 `
     --memory=512Mi `

@@ -203,11 +203,68 @@ A ferramenta recusa destino não verificado e destino que já tem dados próprio
   As ferramentas leem o usuário de um `ContextVar` definido pelo middleware e falham fechadas sem
   ele.
 
+## Revisão assistida de "Outros"
+
+A tela `/revisao` deixa a pessoa conversar com o Claude sobre transações confusas e transformar
+correções aprovadas em regras. O modelo nunca altera o ledger.
+
+- **Proposta separada da execução.** As ferramentas do assistente só leem (`buscar_historico`,
+  `pesquisar_estabelecimento`) ou registram propostas (`registrar_propostas`). Aplicar é outra
+  rota, chamada só pelo botão de aprovação.
+- **Saída do modelo validada no servidor.** Cada proposta passa por Pydantic e por checagens de
+  negócio antes de aparecer na tela. As checagens recusam:
+  - id fora da seleção;
+  - categoria que não existe;
+  - forma de pagamento usada como estabelecimento;
+  - categoria incompatível com o sentido do dinheiro;
+  - fonte citada que não veio de uma pesquisa real;
+  - regra genérica.
+
+  O que é recusado volta para o modelo como erro e aparece como "descartada".
+- **Prévia assinada.** A aprovação manda o conteúdo exato e a assinatura SHA-256 da prévia. A
+  assinatura cobre o conteúdo, as opções e o estado atual de cada transação. Se a pessoa edita a
+  proposta, muda a seleção, ou se as transações mudam no meio tempo, o servidor responde 409 e
+  exige uma nova prévia.
+- **Sem aplicação dupla.** Cada aprovação leva uma chave de idempotência única por usuário.
+  Reenvio ou clique repetido devolve o mesmo lote. As transações e a proposta ficam travadas
+  (`FOR UPDATE`) durante a aplicação.
+- **Auditoria e desfazer.** Cada mudança grava em `revisao_alteracoes` a conta anterior e a nova, o
+  estabelecimento antes e depois, quem tinha categorizado e a origem (usuário, regra, histórico ou
+  pesquisa). Desfazer um lote só reverte as transações que continuam como o lote deixou; o que
+  mudou depois é preservado e informado.
+- **Classificação manual preservada.** Transação que a pessoa já tinha classificado à mão não muda
+  sem a opção explícita "substituir".
+- **Regras específicas.** Padrão sem nenhum termo distintivo é recusado, como "PIX ENVIADO",
+  "COMPRA CARTAO" ou "PARCELA 1/6", porque esconderia gastos reais. Regra pode só nomear o
+  estabelecimento (Amazon) sem inventar categoria, e nunca altera a descrição original.
+- **Transferência interna exige confirmação.** Mover um Pix para Transferência interna tira o valor
+  dos gastos; a prévia mostra o efeito no total e a aplicação exige confirmar que o dinheiro foi
+  para outra conta da própria pessoa.
+- **Pesquisa na web mínima.** A busca só roda com `PESQUISA_WEB=anthropic`, numa chamada separada
+  que recebe apenas o termo e, se houver, a cidade, sem extrato nem histórico. O backend:
+  - aceita só palavras que aparecem nas descrições selecionadas;
+  - tira números, valores, CPF e palavras de pagamento;
+  - aceita cidade só se a pessoa a escreveu ou se ela está na descrição;
+  - recusa pesquisar Pix e transferências, que costumam ter nome de pessoa física.
+
+  As fontes mostradas vêm dos blocos de resultado da ferramenta, nunca do texto do modelo.
+- **Dado não confiável.** Descrições bancárias e páginas pesquisadas entram marcadas como dado. As
+  ferramentas disponíveis não escrevem nada, então uma instrução escondida numa descrição ou página
+  pode no máximo gerar uma proposta, que a pessoa vê e precisa aprovar.
+- **Isolamento.** Conversas, propostas, lotes e alterações herdam `Privado`: filtro central no ORM
+  e chaves estrangeiras compostas com o dono, como o resto dos dados financeiros.
+
 ## Limitações reais
 
 - **Ataque distribuído:** o limite de tentativas é por IP. Um ataque espalhado por muitos IPs
   contra a mesma conta não é bloqueado por conta; não há bloqueio progressivo nem CAPTCHA.
 - **Sem segundo fator:** não há 2FA. O plugin `twoFactor` do Better Auth é o próximo passo natural.
+- **Nome de pessoa fora do Pix:** a pesquisa recusa Pix e transferências, mas não reconhece nome de
+  pessoa física em outros formatos (um "PAG*JoaoSilva" de maquininha vai para a busca como termo).
+- **Pesquisa e prompt injection:** o resumo da busca é produzido por um modelo que leu páginas
+  externas. Ele chega ao assistente marcado como dado e só pode virar proposta, mas o texto da
+  proposta pode refletir uma página enganosa; por isso a origem "pesquisa" aparece destacada e com
+  as fontes.
 - **Tamanho mínimo da senha:** 12 caracteres, abaixo dos 15 que o NIST pede para senha como fator
   único.
 - **Revogação do JWT:** o JWT dura 5 minutos. Se ele vazasse do servidor do Next, valeria até

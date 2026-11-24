@@ -8,6 +8,12 @@ dashboard ou direto do Claude Desktop, via MCP.
 > "O café que eu compro subiu mais que o IPCA?"
 > "Essa transação de R$ 89 em 'PAG*JOAO' é o quê? Marca como Pets."
 
+**No ar:** https://capi-web-618639451720.southamerica-east1.run.app
+
+Crie uma conta (e-mail ou Google) e importe um extrato, ou abra a
+[demonstração](https://capi-web-618639451720.southamerica-east1.run.app/demonstracao), com
+dados fictícios e sem cadastro. Cada push na `main` passa pelos testes e é publicado sozinho.
+
 ## O que tem de diferente
 
 - **Solte os arquivos e veja o mês.** A primeira tela recebe de uma vez o extrato da conta e a
@@ -37,11 +43,107 @@ dashboard ou direto do Claude Desktop, via MCP.
   abreviadas, nomes de produto, documentos.
 - **Servidor MCP no mesmo backend.** As ferramentas que o app usa são as mesmas que o Claude
   Desktop e o Claude Code enxergam.
+- **Revisão assistida de "Outros".** Em `/revisao` você filtra, agrupa descrições parecidas e
+  conversa com o Claude sobre uma seleção: "Lords ZS é a loja de ternos", "tenta descobrir esses
+  estabelecimentos". Ele separa estabelecimento, categoria e forma de pagamento. Também
+  distingue o que você disse do que é hipótese e do que veio de uma pesquisa na web, mostrando as
+  fontes. O resultado sai como proposta. Você aprova, edita ou rejeita a partir de uma prévia, e a
+  correção pode virar regra para as próximas importações, com histórico e desfazer.
 - **Cada pessoa vê só o que é dela.** Cadastro com e-mail verificado ou Google, sessões
   revogáveis e dados financeiros com dono imposto no ORM e no banco. Decisões e limites em
   [docs/seguranca.md](docs/seguranca.md).
 
 Detalhes em [docs/arquitetura.md](docs/arquitetura.md).
+
+## Técnicas usadas
+
+### Dados financeiros
+
+- **Partidas dobradas com garantia no banco.** Todo valor é `BIGINT` em centavos, e cada
+  transação vira lançamentos que somam zero. Um trigger `DEFERRABLE INITIALLY DEFERRED` confere a
+  soma no commit, então nenhum bug de importação deixa o livro desbalanceado. Categoria é a conta de
+  despesa da contrapartida: recategorizar é trocar a conta, e relatório é `SUM`.
+- **Importação idempotente.** O OFX usa o par conta + FITID como chave única. CSV e PDF, que não
+  têm id, ganham um id estável a partir de data, valor e descrição normalizada (sem acento,
+  pontuação e espaços), com um contador para compras iguais no mesmo dia.
+- **Deduplicação entre formatos.** Antes de gravar, o app procura na mesma conta lançamentos com a
+  mesma data e valor e compara as descrições normalizadas. Assim a compra que veio no CSV não conta
+  de novo quando chega o PDF da fatura.
+- **Reconhecimento de banco e de tipo de conta.** Pelo código de compensação ou pelo nome no
+  arquivo, sem a pessoa precisar dizer de onde é o extrato.
+- **NFC-e validada.** A chave de 44 dígitos do QR code passa pelo dígito verificador em módulo 11
+  antes de virar nota.
+
+### IA
+
+- **Regra antes de modelo.** As regras da pessoa ("ZAFFARI vira Mercado") categorizam na
+  importação, de graça. Só o que sobra vai para o Claude.
+- **Saída estruturada com enum dinâmico.** A categorização usa `messages.parse` com um modelo
+  Pydantic criado na hora, em que o campo categoria é um `Literal` com as categorias daquela pessoa.
+  O Haiku 5.5 não consegue responder uma categoria que não existe.
+- **Few-shot recuperado do próprio histórico.** Cada transação pendente leva até três parecidas
+  que a pessoa já categorizou ou corrigiu à mão, achadas por vetor com distância máxima calibrada
+  (0,30). O modelo aprende o jeito dela de organizar sem fine-tuning.
+- **Chat com as mesmas ferramentas do MCP.** O chat lista as ferramentas do servidor MCP e as
+  executa no mesmo processo, com streaming e cache de prompt. O que funciona no app funciona no
+  Claude Desktop.
+- **Persona com rédea curta.** A piada da Capi é gerada pelo Haiku, mas o código sorteia o assunto,
+  a expressão gaúcha e o tipo de piada, e uma expressão regular descarta fala fora do tom. Quando a
+  fala é barrada, ou não há chave da API, entra um roteiro fixo.
+- **Agente que propõe, humano que aplica.** Na revisão de "Outros", o Claude tem três ferramentas:
+  buscar no histórico, pesquisar na web e registrar propostas. Nenhuma delas escreve no ledger.
+  Cada proposta é validada no servidor (ids da seleção, categoria existente, fonte real, regra
+  específica) antes de aparecer na tela. A aprovação aplica uma prévia assinada com SHA-256 e uma
+  chave de idempotência, então editar a proposta exige aprovar de novo e um clique repetido não
+  aplica duas vezes.
+- **Pesquisa na web com dados mínimos.** A busca roda numa chamada separada ao Claude com a
+  ferramenta de web search, que recebe só o nome do estabelecimento como está na descrição. O
+  backend tira números, valores e palavras de pagamento, só aceita cidade que você escreveu e
+  recusa Pix e transferências. Os links mostrados vêm dos blocos de resultado da ferramenta, nunca
+  do texto do modelo.
+
+### Busca
+
+- **RAG só onde é difuso.** Totais e saldos são SQL exposto como ferramenta. Vetor serve para
+  descrição abreviada de banco e nome de produto.
+- **Busca híbrida.** Full-text em português (`tsvector` + GIN) e similaridade por vetor (Voyage,
+  pgvector com HNSW) geram dois rankings, combinados por Reciprocal Rank Fusion (k = 60).
+
+### Segurança
+
+- **Autenticação por biblioteca mantida.** Better Auth no Next: senha com scrypt, verificação de
+  e-mail obrigatória, recuperação com token de uso único guardado como hash, Google com PKCE e sem
+  vínculo automático por e-mail, sessão em cookie `HttpOnly` revogável e limite de tentativas no
+  Postgres (vale com várias instâncias).
+- **API sem segredo compartilhado.** O FastAPI aceita só um JWT Ed25519 de 5 minutos emitido pelo
+  Next para a sessão, validado pela chave pública (JWKS). O navegador nunca fala com a API.
+- **Isolamento falha fechado.** Todo dado financeiro tem dono. Um filtro central do SQLAlchemy
+  (`with_loader_criteria`) restringe toda consulta ao usuário atual, e uma consulta sem usuário dá
+  erro em vez de devolver tudo. Chaves estrangeiras compostas impedem, no próprio banco, que uma
+  transação aponte para a conta de outra pessoa.
+- **MCP com token pessoal.** Gerado na tela Conta, mostrado uma vez, guardado como SHA-256 e
+  revogável.
+
+### Front
+
+- **Next.js 16 com Partial Prerendering.** A moldura das páginas sai estática e o conteúdo logado
+  chega por streaming. Tudo que depende de variável de ambiente ou de sessão espera a requisição
+  (`connection()`), então a mesma imagem serve qualquer ambiente.
+- **Server Actions e rotas do Next como único caminho até a API**, com checagem de origem contra
+  CSRF e redirecionamento só para caminhos internos.
+
+### Infra e entrega
+
+- **Cloud Run + Cloud SQL.** Dois containers sem instância mínima e Postgres 17 com pgvector.
+  Migrations rodam num job do Cloud Run antes do deploy da API.
+- **Segredos fora do código e do CI.** Ficam no Secret Manager e chegam aos containers como
+  variáveis. Os containers rodam com uma conta de serviço que só lê segredos e conecta no banco.
+- **Deploy sem chave.** O GitHub Actions entra no GCP por Workload Identity Federation, aceito só
+  para a `main` deste repositório, identificado pelo id numérico. Não existe chave JSON em lugar
+  nenhum.
+- **CI completo em todo PR.** ruff e pytest contra um Postgres com pgvector de verdade, inclusive
+  testes de isolamento entre usuários e da migration de dados antigos; lint, tipos, testes e build
+  do front.
 
 ## Stack
 
@@ -142,6 +244,18 @@ Variables), impressas pelo `infra.ps1`: `GCP_PROJECT`, `GCP_PROJECT_NUMBER`, `GC
 `smtps://usuario:senha@host:465` e um remetente de domínio com SPF, DKIM e DMARC configurados.
 Sem `SMTP_URL`, cadastro e recuperação falham com erro explícito, de propósito.
 
+**Pesquisa de estabelecimentos.** A revisão de "Outros" pesquisa na web quando a API tem
+`PESQUISA_WEB=anthropic` (o `publicar.ps1` liga por padrão; `-PesquisaWeb desligada` desliga). Ela
+usa a ferramenta de web search da API da Anthropic com a mesma `ANTHROPIC_API_KEY`:
+- **Liberação:** a busca precisa estar liberada para a organização no Console da Anthropic
+  (Settings → Privacy).
+- **Custo:** cada busca é cobrada à parte, além dos tokens.
+- **Limites:** cada pesquisa faz no máximo 2 buscas, e cada mensagem permite no máximo
+  `PESQUISA_WEB_MAX_POR_MENSAGEM` pesquisas (3 por padrão).
+
+Sem a variável, o assistente avisa que a pesquisa não está configurada e a classificação segue
+manual ou com o que você contar.
+
 **Google OAuth.** No Google Cloud Console, crie uma credencial "OAuth client ID" do tipo
 "Web application" e configure:
 
@@ -161,9 +275,11 @@ O servidor MCP responde em `/mcp` (Streamable HTTP) e aceita só tokens pessoais
 **Conta → Claude (MCP)**; a tela mostra o comando pronto, uma vez só:
 
 ```bash
-claude mcp add --transport http capi http://localhost:8100/mcp \
+claude mcp add --transport http capi https://capi-api-618639451720.southamerica-east1.run.app/mcp \
   --header "Authorization: Bearer capi_…"
 ```
+
+Localmente, o endereço é `http://localhost:8100/mcp`.
 
 Cada token enxerga só os dados de quem o criou e pode ser revogado na mesma tela. Ferramentas:
 `gastos_por_categoria`, `saldos`, `buscar_transacoes`, `cofrinho_do_mes`, `recategorizar` e
@@ -176,7 +292,8 @@ Cada token enxerga só os dados de quem o criou e pode ser revogado na mesma tel
 - [x] Validação da chave de acesso da NFC-e
 - [x] Categorização em lote com Claude Haiku 5.5 e saída estruturada
 - [x] Regras de categoria da pessoa aplicadas antes do Claude (tela, API e ferramenta MCP)
-- [ ] Sugerir regra a partir das correções feitas à mão
+- [x] Revisão assistida de "Outros": conversa com o Claude, pesquisa na web, propostas aprovadas com prévia, regras e desfazer
+- [ ] Sugerir regra a partir das correções feitas à mão fora da revisão
 - [x] Servidor MCP com token pessoal por usuário, guardado como hash e revogável
 - [x] Cofrinho: teto do mês, gasto anotado em dois toques e a Capi comentando com Claude
 - [ ] Busca de itens da NFC-e no portal da SEFAZ-RS

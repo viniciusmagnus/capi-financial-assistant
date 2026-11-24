@@ -19,7 +19,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.dialects.postgresql import TSVECTOR
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 DIMENSOES_EMBEDDING = 1024
@@ -77,6 +77,7 @@ class Transacao(Privado, Base):
     importacao_id: Mapped[int | None] = mapped_column(
         ForeignKey("importacoes.id", ondelete="SET NULL"), index=True
     )
+    estabelecimento: Mapped[str | None] = mapped_column(String(80))
     confianca_categoria: Mapped[str | None] = mapped_column(String(5))
     categorizada_por: Mapped[OrigemCategoria | None] = mapped_column(
         Enum(
@@ -113,8 +114,12 @@ class RegraCategoria(Privado, Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     padrao: Mapped[str] = mapped_column(String(120))
-    categoria: Mapped[str] = mapped_column(String(60))
+    categoria: Mapped[str | None] = mapped_column(String(60))
+    estabelecimento: Mapped[str | None] = mapped_column(String(80))
     criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    atualizada_em: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
 
 class PerfilFinanceiro(Privado, Base):
@@ -220,6 +225,75 @@ class Trecho(Privado, Base):
     tsv: Mapped[str] = mapped_column(
         TSVECTOR, Computed("to_tsvector('portuguese', texto)", persisted=True)
     )
+
+
+_ORIGEM_CATEGORIA = Enum(
+    OrigemCategoria,
+    name="origem_categoria",
+    values_callable=lambda e: [m.value for m in e],
+    create_type=False,
+)
+
+
+class ConversaRevisao(Privado, Base):
+    __tablename__ = "revisao_conversas"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    mensagens: Mapped[list] = mapped_column(JSONB, default=list)
+    historico: Mapped[list] = mapped_column(JSONB, default=list)
+    fontes: Mapped[list] = mapped_column(JSONB, default=list)
+    criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    atualizada_em: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class PropostaRevisao(Privado, Base):
+    __tablename__ = "revisao_propostas"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    conversa_id: Mapped[int | None] = mapped_column(ForeignKey("revisao_conversas.id"))
+    status: Mapped[str] = mapped_column(String(12), default="pendente")
+    conteudo: Mapped[dict] = mapped_column(JSONB)
+    criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    decidida_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class LoteRevisao(Privado, Base):
+    __tablename__ = "revisao_lotes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    chave_idempotencia: Mapped[str] = mapped_column(String(64))
+    proposta_id: Mapped[int | None] = mapped_column(ForeignKey("revisao_propostas.id"))
+    regra_id: Mapped[int | None] = mapped_column(ForeignKey("regras_categoria.id"))
+    regra_criada: Mapped[bool] = mapped_column(default=False)
+    regra_anterior: Mapped[dict | None] = mapped_column(JSONB)
+    opcoes: Mapped[dict] = mapped_column(JSONB)
+    resumo: Mapped[str] = mapped_column(Text)
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    desfeito_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    alteracoes: Mapped[list["AlteracaoRevisao"]] = relationship(
+        back_populates="lote", cascade="all, delete-orphan"
+    )
+
+
+class AlteracaoRevisao(Privado, Base):
+    __tablename__ = "revisao_alteracoes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    lote_id: Mapped[int] = mapped_column(ForeignKey("revisao_lotes.id"), index=True)
+    transacao_id: Mapped[int] = mapped_column(ForeignKey("transacoes.id"), index=True)
+    categoria_anterior: Mapped[str] = mapped_column(String(120))
+    categoria_nova: Mapped[str] = mapped_column(String(120))
+    estabelecimento_anterior: Mapped[str | None] = mapped_column(String(80))
+    estabelecimento_novo: Mapped[str | None] = mapped_column(String(80))
+    categorizada_por_anterior: Mapped[OrigemCategoria | None] = mapped_column(_ORIGEM_CATEGORIA)
+    categorizada_por_nova: Mapped[OrigemCategoria | None] = mapped_column(_ORIGEM_CATEGORIA)
+    origem: Mapped[str] = mapped_column(String(12))
+    regra_id: Mapped[int | None] = mapped_column(ForeignKey("regras_categoria.id"))
+
+    lote: Mapped[LoteRevisao] = relationship(back_populates="alteracoes")
 
 
 class Usuario(Base):

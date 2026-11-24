@@ -30,7 +30,12 @@ MARCAS: tuple[Marca, ...] = (
     Marca("disneyplus", "Disney+", (r"DISNEY ?PLUS", r"DISNEY"), "DISNEY"),
     Marca("hbomax", "HBO Max", (r"HBO ?MAX", r"HBO"), "HBO"),
     Marca("primevideo", "Prime Video", (r"PRIME ?VIDEO", r"AMAZON ?PRIME"), "PRIME VIDEO"),
-    Marca("amazon", "Amazon", (r"AMAZON", r"AMZN"), "AMAZON"),
+    Marca(
+        "amazon",
+        "Amazon",
+        (r"AMAZON ?(?:MKTPLC|MKTP|MARKETPLACE)", r"AMAZON", r"AMZN ?(?:MKTP)?"),
+        "AMAZON",
+    ),
     Marca("mercadolivre", "Mercado Livre", (r"MERCADO ?LIVRE",), "MERCADOLIVRE"),
     Marca("shopee", "Shopee", (r"SHOPEE",), "SHOPEE"),
     Marca("aliexpress", "AliExpress", (r"ALIEXPRESS",), "ALIEXPRESS"),

@@ -59,6 +59,7 @@ Como decidir:
 - Pagamento de fatura, aplicação, resgate e transferência entre contas da própria pessoa são "{TRANSFERENCIA_INTERNA}".
 - Entrada com cara de salário (empresa, "SALARIO", "PROVENTOS") é "Salário". Rendimento de investimento é "Rendimentos". Estorno é "Reembolsos".
 - PIX para pessoa física sem outra pista é "Outros" com confiança baixa. Não invente contexto que a descrição não dá.
+- Marketplace (Amazon, Mercado Livre, Shopee, AliExpress) sem o produto na descrição é "Outros" com confiança baixa: não adivinhe o que foi comprado.
 - Saída só recebe categoria de saída e entrada só recebe categoria de entrada.
 
 Algumas transações trazem "parecidos_no_historico": transações dessa mesma pessoa, com descrição parecida, que já foram categorizadas (por regra, por você antes ou corrigidas à mão por ela). Quando é claramente o mesmo estabelecimento ou o mesmo tipo de gasto, siga a categoria do histórico, porque ela reflete como essa pessoa organiza o dinheiro. Quando só a palavra é parecida e o negócio é outro, ignore.

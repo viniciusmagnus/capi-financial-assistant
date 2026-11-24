@@ -52,7 +52,7 @@ do saldo.
 |-------------|-------------------------------------------------------------------|-----------------------------------|
 | OFX         | parser próprio (SGML v1 e XML v2, CP1252 dos bancos brasileiros)  | `(origem, id_externo)` = ACCTID:FITID |
 | NFC-e       | URL do QR code → chave de acesso (44 dígitos, DV módulo 11) → itens | `chave_acesso` única              |
-| PDF/CSV     | roadmap                                                           |                                   |
+| CSV e PDF da fatura | Nubank ou genérico; PDF lido com `pypdf`                  | id gerado de data + valor + descrição normalizada, e deduplicação contra o que já veio em outro formato |
 
 A NFC-e é o diferencial: com os itens da nota dá para acompanhar o preço de cada produto no
 tempo e calcular a **inflação pessoal** contra o IPCA (série 433 do SGS do Banco Central).
@@ -66,9 +66,9 @@ tempo e calcular a **inflação pessoal** contra o IPCA (série 433 do SGS do Ba
 | Chat e resumo do mês           | Haiku 5.5        | escolhe as ferramentas certas e gasta pouco; troque MODELO_ANALISE se quiser mais raciocínio |
 | Importações grandes            | Batch API        | metade do preço, sem pressa                                      |
 
-Hoje a categorização manda todas as pendentes para o Claude. O plano é mandar só o que
-nenhuma regra resolveu e usar as correções do usuário (`categorizada_por = 'usuario'`) como
-exemplos nos próximos lotes.
+As regras da pessoa categorizam primeiro, na importação. Só o que nenhuma regra resolveu vai
+para o Claude, e cada pendente leva como exemplo até três transações parecidas que ela já
+categorizou ou corrigiu à mão (`categorizada_por = 'usuario'`), achadas por vetor.
 
 ## RAG: o que vai para vetor e o que não vai
 
