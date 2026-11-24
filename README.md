@@ -100,7 +100,7 @@ pytest                                                                   # unit�
 TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:55432/nota_a_nota_teste pytest  # + integração e isolamento
 
 cd ../frontend
-npm test && npm run lint && npx tsc --noEmit && npm run build
+npm test && npm run lint && npx next typegen && npx tsc --noEmit && npm run build
 ```
 
 ## Produção
